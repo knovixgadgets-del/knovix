@@ -7,16 +7,24 @@ const statuses = ['placed', 'shipped', 'delivered', 'cancelled']
 export default function OrderDetail() {
   const { id } = useParams()
   const [order, setOrder] = useState(null)
+<<<<<<< HEAD
   const [error, setError] = useState(false)
 
   useEffect(() => { getOrder(id).then(setOrder).catch(() => setError(true)) }, [id])
+=======
+
+  useEffect(() => { getOrder(id).then(setOrder) }, [id])
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
 
   async function handleStatus(status) {
     const updated = await updateOrderStatus(id, status)
     setOrder(updated)
   }
 
+<<<<<<< HEAD
   if (error) return <p className="text-red-500 text-sm">We couldn't load this order. Please try again.</p>
+=======
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
   if (!order) return <p className="text-slate-500 text-sm">Loading…</p>
 
   return (

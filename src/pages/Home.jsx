@@ -28,11 +28,21 @@ function useCountdown(hours = 51) {
 export default function Home() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
+<<<<<<< HEAD
+=======
+  const [productsError, setProductsError] = useState(false)
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
   const { d, h, m, s } = useCountdown()
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => setCategories([]))
+<<<<<<< HEAD
     getProducts().then(setProducts).catch(() => setProducts([]))
+=======
+    getProducts()
+      .then(setProducts)
+      .catch(() => setProductsError(true))
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
   }, [])
 
   const featured = products.filter((p) => p.featured)
@@ -99,9 +109,19 @@ export default function Home() {
           <h2 className="text-xl font-bold">Featured Products</h2>
           <Link to="/shop" className="text-brand-700 text-sm font-medium">View all Products →</Link>
         </div>
+<<<<<<< HEAD
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
+=======
+        {productsError ? (
+          <p className="text-slate-500 text-sm">Couldn't load featured products right now. Please refresh the page.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            {featured.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        )}
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
       </section>
 
       <section className="container-px max-w-7xl mx-auto">
@@ -128,9 +148,19 @@ export default function Home() {
           <h2 className="text-xl font-bold">Best Sellers</h2>
           <Link to="/shop" className="text-brand-700 text-sm font-medium">View all Products →</Link>
         </div>
+<<<<<<< HEAD
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {bestSellers.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
+=======
+        {productsError ? (
+          <p className="text-slate-500 text-sm">Couldn't load best sellers right now. Please refresh the page.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            {bestSellers.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        )}
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
       </section>
 
       <section className="container-px max-w-7xl mx-auto py-10">

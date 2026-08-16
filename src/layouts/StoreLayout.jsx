@@ -10,7 +10,11 @@ export default function StoreLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+<<<<<<< HEAD
       <main className="flex-1 pb-16 lg:pb-0">
+=======
+      <main className="flex-1 pb-16 md:pb-0">
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
         <Outlet />
       </main>
       <Footer />

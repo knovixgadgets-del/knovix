@@ -58,6 +58,10 @@ export const localDb = {
     if (sort === 'price_asc') items = [...items].sort((a, b) => a.price - b.price)
     if (sort === 'price_desc') items = [...items].sort((a, b) => b.price - a.price)
     if (sort === 'rating') items = [...items].sort((a, b) => b.rating - a.rating)
+<<<<<<< HEAD
+=======
+    if (sort === 'newest') items = [...items].reverse()
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
     return items
   },
   async getProduct(id) {

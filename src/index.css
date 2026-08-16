@@ -21,6 +21,7 @@ h1,h2,h3,h4 { @apply font-display; }
 .card { @apply bg-white rounded-xl border border-slate-200 shadow-card; }
 .container-px { @apply px-4 sm:px-6 lg:px-10; }
 .badge-off { @apply text-[11px] font-semibold text-brand-700 bg-brand-50 rounded px-1.5 py-0.5; }
+<<<<<<< HEAD
 
 @keyframes marquee {
   from { transform: translateX(0); }
@@ -35,3 +36,5 @@ h1,h2,h3,h4 { @apply font-display; }
 @media (prefers-reduced-motion: reduce) {
   .marquee-track { animation: none; }
 }
+=======
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3

@@ -1,4 +1,5 @@
 # Apache: serve index.html for any path so React Router can handle it client-side.
+<<<<<<< HEAD
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -6,4 +7,16 @@
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
+=======
+# The substitution below is intentionally relative ("index.html", not "/index.html")
+# so this works whether the site is deployed at the domain root (public_html/) or
+# in a subfolder (public_html/shop/) — an absolute path here would 404 on page
+# refresh/direct links whenever the site is not installed at the server root.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . index.html [L]
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
 </IfModule>

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { Link } from 'react-router-dom'
+=======
+import { Link, useNavigate } from 'react-router-dom'
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
 import StarRating from './StarRating'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
@@ -6,8 +10,20 @@ import { useWishlist } from '../context/WishlistContext'
 export default function ProductCard({ product }) {
   const { addItem } = useCart()
   const { toggle, isWishlisted } = useWishlist()
+<<<<<<< HEAD
   const off = Math.round(((product.mrp - product.price) / product.mrp) * 100)
 
+=======
+  const navigate = useNavigate()
+  const off = Math.round(((product.mrp - product.price) / product.mrp) * 100)
+
+  function handleBuyNow(e) {
+    e.preventDefault()
+    addItem(product, 1)
+    navigate('/checkout')
+  }
+
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
   return (
     <div className="card p-3 flex flex-col group">
       <div className="relative">
@@ -42,6 +58,7 @@ export default function ProductCard({ product }) {
         {off > 0 && <span className="badge-off">{off}% OFF</span>}
       </div>
 
+<<<<<<< HEAD
       <button
         onClick={() => addItem(product, 1)}
         disabled={product.stock === 0}
@@ -49,6 +66,28 @@ export default function ProductCard({ product }) {
       >
         🛒 {product.stock === 0 ? 'Out of stock' : 'Add to Cart'}
       </button>
+=======
+      {product.stock > 0 && product.stock <= 10 && (
+        <p className="text-[11px] text-red-500 font-medium mt-1">Only {product.stock} left</p>
+      )}
+
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={() => addItem(product, 1)}
+          disabled={product.stock === 0}
+          className="btn-outline flex-1 text-xs py-2"
+        >
+          🛒 {product.stock === 0 ? 'Out of stock' : 'Add to Cart'}
+        </button>
+        <button
+          onClick={handleBuyNow}
+          disabled={product.stock === 0}
+          className="btn-primary flex-1 text-xs py-2"
+        >
+          ⚡ Buy Now
+        </button>
+      </div>
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
     </div>
   )
 }

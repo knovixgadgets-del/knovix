@@ -14,10 +14,17 @@ export default function Shop() {
   const sort = params.get('sort') || ''
   const [maxPrice, setMaxPrice] = useState(5000)
 
+<<<<<<< HEAD
+=======
+  const [error, setError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
+
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
   useEffect(() => { getCategories().then(setCategories).catch(() => setCategories([])) }, [])
 
   useEffect(() => {
     setLoading(true)
+<<<<<<< HEAD
     getProducts({ category, search, sort })
       .then((items) => {
         setProducts(items)
@@ -28,6 +35,14 @@ export default function Shop() {
         setLoading(false)
       })
   }, [category, search, sort])
+=======
+    setError('')
+    getProducts({ category, search, sort })
+      .then((items) => setProducts(items))
+      .catch(() => setError("Couldn't load products right now. Please try again."))
+      .finally(() => setLoading(false))
+  }, [category, search, sort, retryKey])
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
 
   const filtered = useMemo(() => products.filter((p) => p.price <= maxPrice), [products, maxPrice])
 
@@ -72,6 +87,10 @@ export default function Shop() {
           </h1>
           <select value={sort} onChange={(e) => setParam('sort', e.target.value)} className="input w-auto">
             <option value="">Sort: Featured</option>
+<<<<<<< HEAD
+=======
+            <option value="newest">Newest First</option>
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
             <option value="price_asc">Price: Low to High</option>
             <option value="price_desc">Price: High to Low</option>
             <option value="rating">Top Rated</option>
@@ -80,6 +99,14 @@ export default function Shop() {
 
         {loading ? (
           <p className="text-slate-500 text-sm">Loading products…</p>
+<<<<<<< HEAD
+=======
+        ) : error ? (
+          <div className="text-center py-10">
+            <p className="text-slate-500 text-sm">{error}</p>
+            <button onClick={() => setRetryKey((k) => k + 1)} className="btn-outline mt-3">Retry</button>
+          </div>
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
         ) : filtered.length === 0 ? (
           <p className="text-slate-500 text-sm">No products match your filters.</p>
         ) : (

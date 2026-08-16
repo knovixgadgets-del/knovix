@@ -36,7 +36,11 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+<<<<<<< HEAD
         {['about', 'careers', 'blog', 'contact', 'faq', 'returns', 'shipping', 'privacy', 'terms'].map((slug) => (
+=======
+        {['about', 'careers', 'blog', 'brands', 'contact', 'faq', 'returns', 'shipping', 'privacy', 'terms'].map((slug) => (
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
           <Route key={slug} path={`/${slug}`} element={<StaticPage title={slug.replace(/^\w/, (c) => c.toUpperCase())} />} />
         ))}
         <Route path="*" element={<NotFound />} />

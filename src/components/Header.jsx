@@ -7,11 +7,19 @@ import { useAuth } from '../context/AuthContext'
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/shop', label: 'Shop' },
+<<<<<<< HEAD
+=======
+  { to: '/shop?sort=price_asc', label: 'Deals' },
+  { to: '/shop?sort=newest', label: 'New Arrivals' },
+  { to: '/brands', label: 'Brands' },
+  { to: '/blog', label: 'Blog' },
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
   { to: '/shop?sort=rating', label: 'Best Rated' },
   { to: '/wishlist', label: 'Wishlist' },
   { to: '/contact', label: 'Contact' }
 ]
 
+<<<<<<< HEAD
 const promoMessages = [
   '🚚 Free Shipping on all orders above ₹499',
   '🔄 7-Day Easy Replacement',
@@ -23,6 +31,16 @@ const topLinks = [
   { to: '/shop?sort=price_asc', label: 'Deals' },
   { to: '/shop', label: 'New Arrivals' },
   { to: '/shop', label: 'Brands' }
+=======
+// Shown as a compact horizontally-scrollable strip on mobile, right under the
+// logo row (replaces the cart icon that used to sit top-right on mobile —
+// cart is still reachable from the bottom tab bar there).
+const quickLinks = [
+  { to: '/shop?sort=price_asc', label: 'Deals' },
+  { to: '/shop?sort=newest', label: 'New Arrivals' },
+  { to: '/brands', label: 'Brands' },
+  { to: '/blog', label: 'Blog' }
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
 ]
 
 export default function Header({ menuOpen, setMenuOpen }) {
@@ -35,11 +53,15 @@ export default function Header({ menuOpen, setMenuOpen }) {
   function onSearch(e) {
     e.preventDefault()
     navigate(`/shop${query ? `?search=${encodeURIComponent(query)}` : ''}`)
+<<<<<<< HEAD
     setMenuOpen(false)
+=======
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
   }
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-100">
+<<<<<<< HEAD
       <div className="bg-ink-900 text-white text-xs overflow-hidden">
         <div className="container-px max-w-7xl mx-auto flex items-center gap-3 sm:gap-6 py-1.5">
           <div className="flex-1 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]">
@@ -56,6 +78,13 @@ export default function Header({ menuOpen, setMenuOpen }) {
               </Link>
             ))}
           </div>
+=======
+      <div className="bg-ink-900 text-white text-xs">
+        <div className="container-px max-w-7xl mx-auto flex items-center justify-between py-1.5">
+          <span>Free Shipping on all orders above ₹499</span>
+          <span className="hidden sm:inline">7-Day Easy Replacement</span>
+          <span className="hidden md:inline">24/7 Customer Support</span>
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
         </div>
       </div>
 
@@ -67,7 +96,11 @@ export default function Header({ menuOpen, setMenuOpen }) {
           <span className="text-[10px] tracking-[0.3em] text-slate-500">GADGETS</span>
         </Link>
 
+<<<<<<< HEAD
         <form onSubmit={onSearch} className="hidden lg:flex flex-1 max-w-xl">
+=======
+        <form onSubmit={onSearch} className="hidden md:flex flex-1 max-w-xl">
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -78,12 +111,20 @@ export default function Header({ menuOpen, setMenuOpen }) {
         </form>
 
         <div className="flex items-center gap-5 ml-auto text-sm">
+<<<<<<< HEAD
           <Link to="/wishlist" className="hidden lg:flex flex-col items-center text-slate-600 hover:text-brand-700">
+=======
+          <Link to="/wishlist" className="hidden sm:flex flex-col items-center text-slate-600 hover:text-brand-700">
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
             <span>♡ {wishCount > 0 && <sup>{wishCount}</sup>}</span>
             <span className="text-xs">Wishlist</span>
           </Link>
 
+<<<<<<< HEAD
           <div className="relative group hidden lg:block">
+=======
+          <div className="relative group hidden sm:block">
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
             <button className="flex flex-col items-center text-slate-600 hover:text-brand-700">
               <span>👤</span>
               <span className="text-xs">{user ? user.name.split(' ')[0] : 'Account'}</span>
@@ -104,7 +145,11 @@ export default function Header({ menuOpen, setMenuOpen }) {
             </div>
           </div>
 
+<<<<<<< HEAD
           <Link to="/cart" className="hidden lg:flex relative flex-col items-center text-slate-600 hover:text-brand-700">
+=======
+          <Link to="/cart" className="relative hidden sm:flex flex-col items-center text-slate-600 hover:text-brand-700">
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
             <span>🛒</span>
             <span className="text-xs">Cart</span>
             {count > 0 && (
@@ -116,8 +161,27 @@ export default function Header({ menuOpen, setMenuOpen }) {
         </div>
       </div>
 
+<<<<<<< HEAD
       <nav className="hidden lg:block border-t border-slate-100">
         <div className="container-px max-w-7xl mx-auto flex items-center gap-6 py-2 text-sm font-medium">
+=======
+      <nav className="md:hidden border-t border-slate-100 overflow-x-auto">
+        <div className="flex items-center gap-5 px-4 py-2 text-xs font-medium whitespace-nowrap">
+          {quickLinks.map((l) => (
+            <NavLink
+              key={l.label}
+              to={l.to}
+              className={({ isActive }) => (isActive ? 'text-brand-700' : 'text-slate-700 hover:text-brand-700')}
+            >
+              {l.label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+
+      <nav className="hidden md:block border-t border-slate-100">
+        <div className="container-px max-w-7xl mx-auto flex flex-wrap items-center gap-x-6 gap-y-1.5 py-2 text-sm font-medium">
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
           {navLinks.map((l) => (
             <NavLink
               key={l.label}
@@ -132,7 +196,11 @@ export default function Header({ menuOpen, setMenuOpen }) {
       </nav>
 
       {menuOpen && (
+<<<<<<< HEAD
         <div className="lg:hidden border-t border-slate-100 px-4 py-3 space-y-2">
+=======
+        <div className="md:hidden border-t border-slate-100 px-4 py-3 space-y-2">
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
           <form onSubmit={onSearch} className="flex mb-2">
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search..." className="input rounded-r-none" />
             <button className="btn-primary rounded-l-none px-4">🔍</button>
@@ -144,6 +212,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
             <>
               <Link to="/account" onClick={() => setMenuOpen(false)} className="block py-1 text-sm">My Orders</Link>
               {isAdmin && <Link to="/admin" onClick={() => setMenuOpen(false)} className="block py-1 text-sm">Admin Panel</Link>}
+<<<<<<< HEAD
               <button onClick={() => { logout(); setMenuOpen(false) }} className="block py-1 text-sm text-red-600">Logout</button>
             </>
           ) : (
@@ -151,6 +220,12 @@ export default function Header({ menuOpen, setMenuOpen }) {
               <Link to="/login" onClick={() => setMenuOpen(false)} className="block py-1 text-sm">Login</Link>
               <Link to="/signup" onClick={() => setMenuOpen(false)} className="block py-1 text-sm">Sign Up</Link>
             </>
+=======
+              <button onClick={logout} className="block py-1 text-sm text-red-600">Logout</button>
+            </>
+          ) : (
+            <Link to="/login" onClick={() => setMenuOpen(false)} className="block py-1 text-sm">Login</Link>
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
           )}
         </div>
       )}

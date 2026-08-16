@@ -8,7 +8,11 @@ export default function Wishlist() {
   const { ids } = useWishlist()
   const [products, setProducts] = useState([])
 
+<<<<<<< HEAD
   useEffect(() => { getProducts().then(setProducts).catch(() => setProducts([])) }, [])
+=======
+  useEffect(() => { getProducts().then(setProducts) }, [])
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
 
   const items = products.filter((p) => ids.includes(p.id))
 

@@ -6,7 +6,11 @@ export default function OrderSuccess() {
   const { id } = useParams()
   const [order, setOrder] = useState(null)
 
+<<<<<<< HEAD
   useEffect(() => { getOrder(id).then(setOrder).catch(() => setOrder(null)) }, [id])
+=======
+  useEffect(() => { getOrder(id).then(setOrder) }, [id])
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
 
   return (
     <div className="container-px max-w-xl mx-auto py-20 text-center">

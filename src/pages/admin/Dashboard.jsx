@@ -6,6 +6,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, lowStock: 0 })
 
   useEffect(() => {
+<<<<<<< HEAD
     Promise.all([getProducts(), getOrders()])
       .then(([products, orders]) => {
         setStats({
@@ -16,6 +17,16 @@ export default function Dashboard() {
         })
       })
       .catch(() => setStats({ products: 0, orders: 0, revenue: 0, lowStock: 0 }))
+=======
+    Promise.all([getProducts(), getOrders()]).then(([products, orders]) => {
+      setStats({
+        products: products.length,
+        orders: orders.length,
+        revenue: orders.reduce((s, o) => s + o.total, 0),
+        lowStock: products.filter((p) => p.stock <= 10).length
+      })
+    })
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
   }, [])
 
   const cards = [

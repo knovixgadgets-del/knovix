@@ -13,7 +13,11 @@ export default function Account() {
   const { user } = useAuth()
   const [orders, setOrders] = useState([])
 
+<<<<<<< HEAD
   useEffect(() => { getOrders({ userId: user.id }).then(setOrders).catch(() => setOrders([])) }, [user.id])
+=======
+  useEffect(() => { getOrders({ userId: user.id }).then(setOrders) }, [user.id])
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
 
   return (
     <div className="container-px max-w-3xl mx-auto py-8">

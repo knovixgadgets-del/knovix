@@ -11,7 +11,11 @@ const statusColor = {
 
 export default function OrdersList() {
   const [orders, setOrders] = useState([])
+<<<<<<< HEAD
   useEffect(() => { getOrders().then(setOrders).catch(() => setOrders([])) }, [])
+=======
+  useEffect(() => { getOrders().then(setOrders) }, [])
+>>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
 
   return (
     <div>
