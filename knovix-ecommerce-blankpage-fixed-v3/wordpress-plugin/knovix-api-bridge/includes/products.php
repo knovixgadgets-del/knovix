@@ -1,114 +1,169 @@
 <?php
-if (!defined('ABSPATH')) exit;
 
-function knovix_register_product_routes() {
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-    /* =========================================================
-       GET PRODUCT CATEGORIES
-       ========================================================= */
+
+/*
+|--------------------------------------------------------------------------
+| Register Product Routes
+|--------------------------------------------------------------------------
+*/
+
+function knovix_register_product_routes()
+{
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET CATEGORIES
+    |--------------------------------------------------------------------------
+    |
+    | GET /wp-json/knovix/v1/categories
+    |
+    */
 
     register_rest_route(KNOVIX_API_NS, '/categories', [
-        'methods'  => 'GET',
+
+        'methods' => WP_REST_Server::READABLE,
+
         'permission_callback' => 'knovix_public_permission',
 
         'callback' => function () {
 
             $terms = get_terms([
                 'taxonomy'   => 'product_cat',
-                'hide_empty' => false
+                'hide_empty' => false,
             ]);
+
 
             if (is_wp_error($terms)) {
                 return [];
             }
 
-            return array_values(
-                array_filter(
-                    array_map(function ($t) {
 
-                        // Remove WooCommerce Uncategorized category
-                        if ($t->slug === 'uncategorized') {
-                            return null;
-                        }
-
-                        $thumb_id = get_term_meta(
-                            $t->term_id,
-                            'thumbnail_id',
-                            true
-                        );
-
-                        return [
-                            'id'    => $t->slug,
-                            'name'  => $t->name,
-                            'image' => $thumb_id
-                                ? wp_get_attachment_image_url(
-                                    $thumb_id,
-                                    'medium'
-                                )
-                                : ''
-                        ];
-
-                    }, $terms)
-                )
-            );
-        }
-    ]);
+            $categories = [];
 
 
-    /* =========================================================
-       GET PRODUCTS
-       Optimized: 24 products per request instead of 100
-       ========================================================= */
+            foreach ($terms as $term) {
 
-    register_rest_route(KNOVIX_API_NS, '/products', [
-        'methods'  => 'GET',
-        'permission_callback' => 'knovix_public_permission',
-
-        'callback' => function (WP_REST_Request $req) {
-
-            /*
-             * IMPORTANT:
-             * Previously this was:
-             *
-             * 'limit' => 100
-             *
-             * Now we load only 24 products initially.
-             */
-
-            $args = [
-                'status' => 'publish',
-                'limit'  => 24,
-                'return' => 'objects'
-            ];
+                /*
+                 * Remove WooCommerce default category.
+                 */
+                if ($term->slug === 'uncategorized') {
+                    continue;
+                }
 
 
-            /* =================================================
-               CATEGORY FILTER
-               ================================================= */
+                /*
+                 * Get category image.
+                 */
+                $thumbnail_id = get_term_meta(
+                    $term->term_id,
+                    'thumbnail_id',
+                    true
+                );
 
-            if ($category = $req->get_param('category')) {
 
-                $args['category'] = [
-                    sanitize_title($category)
+                $image = '';
+
+                if ($thumbnail_id) {
+
+                    $image_url = wp_get_attachment_image_url(
+                        $thumbnail_id,
+                        'medium'
+                    );
+
+                    if ($image_url) {
+                        $image = $image_url;
+                    }
+                }
+
+
+                $categories[] = [
+                    'id'    => $term->slug,
+                    'name'  => $term->name,
+                    'image' => $image,
                 ];
             }
 
 
-            /* =================================================
-               SEARCH
-               ================================================= */
+            return array_values($categories);
+        },
 
-            if ($search = $req->get_param('search')) {
+    ]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET PRODUCTS
+    |--------------------------------------------------------------------------
+    |
+    | GET /wp-json/knovix/v1/products
+    |
+    */
+
+    register_rest_route(KNOVIX_API_NS, '/products', [
+
+        'methods' => WP_REST_Server::READABLE,
+
+        'permission_callback' => 'knovix_public_permission',
+
+        'callback' => function (WP_REST_Request $request) {
+
+            /*
+             * Default WooCommerce query.
+             */
+            $args = [
+
+                'status' => 'publish',
+
+                'limit' => 24,
+
+                'return' => 'objects',
+
+            ];
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Category
+            |--------------------------------------------------------------------------
+            */
+
+            $category = $request->get_param('category');
+
+            if ($category !== null && $category !== '') {
+
+                $args['category'] = [
+                    sanitize_title($category),
+                ];
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Search
+            |--------------------------------------------------------------------------
+            */
+
+            $search = $request->get_param('search');
+
+            if ($search !== null && $search !== '') {
 
                 $args['s'] = sanitize_text_field($search);
             }
 
 
-            /* =================================================
-               SORTING
-               ================================================= */
+            /*
+            |--------------------------------------------------------------------------
+            | Sorting
+            |--------------------------------------------------------------------------
+            */
 
-            switch ($req->get_param('sort')) {
+            $sort = $request->get_param('sort');
+
+            switch ($sort) {
 
                 case 'price_asc':
 
@@ -132,348 +187,568 @@ function knovix_register_product_routes() {
                     $args['order']   = 'DESC';
 
                     break;
+
+
+                case 'newest':
+
+                    $args['orderby'] = 'date';
+                    $args['order']   = 'DESC';
+
+                    break;
+
+
+                default:
+
+                    /*
+                     * WooCommerce default.
+                     */
+                    $args['orderby'] = 'date';
+                    $args['order']   = 'DESC';
+
+                    break;
             }
 
 
-            /* =================================================
-               GET WOOCOMMERCE PRODUCTS
-               ================================================= */
+            /*
+            |--------------------------------------------------------------------------
+            | Fetch WooCommerce products
+            |--------------------------------------------------------------------------
+            */
 
             $products = wc_get_products($args);
 
 
-            /* =================================================
-               FORMAT PRODUCTS FOR REACT FRONTEND
-               ================================================= */
+            /*
+            |--------------------------------------------------------------------------
+            | Format for React
+            |--------------------------------------------------------------------------
+            */
 
-            return array_map(
-                'knovix_format_product',
-                $products
-            );
-        }
-    ]);
+            $result = [];
 
+            foreach ($products as $product) {
 
-    /* =========================================================
-       GET SINGLE PRODUCT
-       GET /products/{id}
-       ========================================================= */
-
-    register_rest_route(KNOVIX_API_NS, '/products/(?P<id>\d+)', [
-        'methods'  => 'GET',
-        'permission_callback' => 'knovix_public_permission',
-
-        'callback' => function (WP_REST_Request $req) {
-
-            $product = wc_get_product(
-                (int) $req['id']
-            );
-
-            if (!$product) {
-
-                return knovix_error(
-                    'Product not found',
-                    404
-                );
+                $result[] = knovix_format_product($product);
             }
 
-            return knovix_format_product($product);
-        }
+
+            return $result;
+        },
+
     ]);
 
 
-    /* =========================================================
-       CREATE PRODUCT
-       ADMIN ONLY
-       POST /products
-       ========================================================= */
+    /*
+    |--------------------------------------------------------------------------
+    | GET SINGLE PRODUCT
+    |--------------------------------------------------------------------------
+    |
+    | GET /wp-json/knovix/v1/products/123
+    |
+    */
+
+    register_rest_route(
+        KNOVIX_API_NS,
+        '/products/(?P<id>\d+)',
+        [
+
+            'methods' => WP_REST_Server::READABLE,
+
+            'permission_callback' => 'knovix_public_permission',
+
+            'callback' => function (WP_REST_Request $request) {
+
+                $product_id = absint(
+                    $request->get_param('id')
+                );
+
+
+                $product = wc_get_product($product_id);
+
+
+                if (!$product) {
+
+                    return knovix_error(
+                        'Product not found',
+                        404
+                    );
+                }
+
+
+                return knovix_format_product($product);
+            },
+
+        ]
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREATE PRODUCT
+    |--------------------------------------------------------------------------
+    |
+    | POST /wp-json/knovix/v1/products
+    |
+    */
 
     register_rest_route(KNOVIX_API_NS, '/products', [
-        'methods'  => 'POST',
+
+        'methods' => WP_REST_Server::CREATABLE,
+
         'permission_callback' => 'knovix_require_admin',
 
-        'callback' => function (WP_REST_Request $req) {
+        'callback' => function (WP_REST_Request $request) {
 
             $product = new WC_Product_Simple();
 
+
+            /*
+             * Apply request fields.
+             */
             knovix_apply_product_fields(
                 $product,
-                $req
+                $request
             );
 
+
+            /*
+             * Save product.
+             */
             $product->save();
 
-            return knovix_format_product($product);
-        }
-    ]);
 
-
-    /* =========================================================
-       UPDATE PRODUCT
-       ADMIN ONLY
-       PATCH /products/{id}
-       PUT /products/{id}
-       ========================================================= */
-
-    register_rest_route(KNOVIX_API_NS, '/products/(?P<id>\d+)', [
-        'methods'  => ['PATCH', 'PUT'],
-        'permission_callback' => 'knovix_require_admin',
-
-        'callback' => function (WP_REST_Request $req) {
-
-            $product = wc_get_product(
-                (int) $req['id']
-            );
-
-            if (!$product) {
-
-                return knovix_error(
-                    'Product not found',
-                    404
-                );
-            }
-
-            knovix_apply_product_fields(
+            /*
+             * Save custom bestseller value.
+             */
+            knovix_save_bestseller_meta(
                 $product,
-                $req
+                $request
             );
 
-            $product->save();
 
             return knovix_format_product($product);
-        }
+        },
+
     ]);
 
 
-    /* =========================================================
-       DELETE PRODUCT
-       ADMIN ONLY
-       DELETE /products/{id}
-       ========================================================= */
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE PRODUCT
+    |--------------------------------------------------------------------------
+    |
+    | PUT/PATCH /wp-json/knovix/v1/products/123
+    |
+    */
 
-    register_rest_route(KNOVIX_API_NS, '/products/(?P<id>\d+)', [
-        'methods'  => 'DELETE',
-        'permission_callback' => 'knovix_require_admin',
+    register_rest_route(
+        KNOVIX_API_NS,
+        '/products/(?P<id>\d+)',
+        [
 
-        'callback' => function (WP_REST_Request $req) {
+            'methods' => [
+                WP_REST_Server::EDITABLE,
+            ],
 
-            $product = wc_get_product(
-                (int) $req['id']
-            );
+            'permission_callback' => 'knovix_require_admin',
 
-            if (!$product) {
+            'callback' => function (WP_REST_Request $request) {
 
-                return knovix_error(
-                    'Product not found',
-                    404
+                $product_id = absint(
+                    $request->get_param('id')
                 );
-            }
 
-            $product->delete(true);
 
-            return [
-                'success' => true
-            ];
-        }
-    ]);
+                $product = wc_get_product($product_id);
+
+
+                if (!$product) {
+
+                    return knovix_error(
+                        'Product not found',
+                        404
+                    );
+                }
+
+
+                /*
+                 * Apply changed fields.
+                 */
+                knovix_apply_product_fields(
+                    $product,
+                    $request
+                );
+
+
+                /*
+                 * Save.
+                 */
+                $product->save();
+
+
+                /*
+                 * Save bestseller meta.
+                 */
+                knovix_save_bestseller_meta(
+                    $product,
+                    $request
+                );
+
+
+                return knovix_format_product($product);
+            },
+
+        ]
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE PRODUCT
+    |--------------------------------------------------------------------------
+    |
+    | DELETE /wp-json/knovix/v1/products/123
+    |
+    */
+
+    register_rest_route(
+        KNOVIX_API_NS,
+        '/products/(?P<id>\d+)',
+        [
+
+            'methods' => WP_REST_Server::DELETABLE,
+
+            'permission_callback' => 'knovix_require_admin',
+
+            'callback' => function (WP_REST_Request $request) {
+
+                $product_id = absint(
+                    $request->get_param('id')
+                );
+
+
+                $product = wc_get_product($product_id);
+
+
+                if (!$product) {
+
+                    return knovix_error(
+                        'Product not found',
+                        404
+                    );
+                }
+
+
+                /*
+                 * Permanently delete product.
+                 */
+                $product->delete(true);
+
+
+                return [
+                    'success' => true,
+                    'id'      => $product_id,
+                ];
+            },
+
+        ]
+    );
+
 }
 
 
-/* =============================================================
-   APPLY PRODUCT FORM DATA
-   ============================================================= */
+/*
+|--------------------------------------------------------------------------
+| Apply Product Fields
+|--------------------------------------------------------------------------
+*/
 
 function knovix_apply_product_fields(
-    $product,
-    WP_REST_Request $req
+    WC_Product $product,
+    WP_REST_Request $request
 ) {
 
-    /* ---------------------------------------------------------
-       PRODUCT NAME
-       --------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | NAME
+    |--------------------------------------------------------------------------
+    */
 
-    if ($req->get_param('name') !== null) {
+    if ($request->get_param('name') !== null) {
 
         $product->set_name(
             sanitize_text_field(
-                $req->get_param('name')
+                $request->get_param('name')
             )
         );
     }
 
 
-    /* ---------------------------------------------------------
-       DESCRIPTION
-       --------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | DESCRIPTION
+    |--------------------------------------------------------------------------
+    */
 
-    if ($req->get_param('description') !== null) {
+    if ($request->get_param('description') !== null) {
 
         $product->set_description(
             wp_kses_post(
-                $req->get_param('description')
+                $request->get_param('description')
             )
         );
     }
 
 
-    /* ---------------------------------------------------------
-       PRICE
-       --------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | SHORT DESCRIPTION
+    |--------------------------------------------------------------------------
+    */
 
-    if ($req->get_param('price') !== null) {
+    if ($request->get_param('shortDescription') !== null) {
+
+        $product->set_short_description(
+            wp_kses_post(
+                $request->get_param('shortDescription')
+            )
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PRICE / MRP
+    |--------------------------------------------------------------------------
+    |
+    | React:
+    |
+    | mrp   = original price
+    | price = selling price
+    |
+    | Example:
+    |
+    | mrp   = 999
+    | price = 799
+    |
+    | WooCommerce:
+    |
+    | regular_price = 999
+    | sale_price    = 799
+    |
+    */
+
+    $price = $request->get_param('price');
+    $mrp   = $request->get_param('mrp');
+
+
+    if ($mrp !== null && $mrp !== '') {
+
+        $mrp_value = wc_format_decimal($mrp);
 
         $product->set_regular_price(
-            (string) $req->get_param('price')
+            $mrp_value
         );
     }
 
 
-    /* ---------------------------------------------------------
-       MRP
-       --------------------------------------------------------- */
+    if ($price !== null && $price !== '') {
 
-    if ($req->get_param('mrp') !== null) {
+        $price_value = wc_format_decimal($price);
 
-        $product->set_regular_price(
-            (string) $req->get_param('mrp')
-        );
+        /*
+         * If MRP exists and selling price is lower,
+         * use WooCommerce sale price.
+         */
+        if (
+            $mrp !== null &&
+            $mrp !== '' &&
+            (float) $price < (float) $mrp
+        ) {
+
+            $product->set_sale_price(
+                $price_value
+            );
+
+        } else {
+
+            /*
+             * No discount.
+             */
+            $product->set_regular_price(
+                $price_value
+            );
+
+            $product->set_sale_price('');
+        }
     }
 
 
-    /* ---------------------------------------------------------
-       SALE PRICE
-       --------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | STOCK
+    |--------------------------------------------------------------------------
+    */
 
-    if (
-        $req->get_param('price') !== null &&
-        $req->get_param('mrp') !== null &&
-        (float) $req->get_param('price') <
-        (float) $req->get_param('mrp')
-    ) {
+    if ($request->get_param('stock') !== null) {
 
-        $product->set_sale_price(
-            (string) $req->get_param('price')
+        $stock = absint(
+            $request->get_param('stock')
         );
-    }
 
-
-    /* ---------------------------------------------------------
-       STOCK
-       --------------------------------------------------------- */
-
-    if ($req->get_param('stock') !== null) {
-
-        $stock = (int) $req->get_param('stock');
 
         $product->set_manage_stock(true);
 
         $product->set_stock_quantity($stock);
 
-        $product->set_stock_status(
-            $stock > 0
-                ? 'instock'
-                : 'outofstock'
-        );
+
+        if ($stock > 0) {
+
+            $product->set_stock_status(
+                'instock'
+            );
+
+        } else {
+
+            $product->set_stock_status(
+                'outofstock'
+            );
+        }
     }
 
 
-    /* ---------------------------------------------------------
-       FEATURED PRODUCT
-       --------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | FEATURED
+    |--------------------------------------------------------------------------
+    */
 
-    if ($req->get_param('featured') !== null) {
+    if ($request->get_param('featured') !== null) {
+
+        $featured = filter_var(
+            $request->get_param('featured'),
+            FILTER_VALIDATE_BOOLEAN
+        );
+
 
         $product->set_featured(
-            (bool) $req->get_param('featured')
+            $featured
         );
     }
 
 
-    /* ---------------------------------------------------------
-       CATEGORY
-       --------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | CATEGORY
+    |--------------------------------------------------------------------------
+    */
 
-    if ($req->get_param('category') !== null) {
+    if ($request->get_param('category') !== null) {
+
+        $category_slug = sanitize_title(
+            $request->get_param('category')
+        );
+
 
         $term = get_term_by(
             'slug',
-            sanitize_title(
-                $req->get_param('category')
-            ),
+            $category_slug,
             'product_cat'
         );
 
-        if ($term) {
+
+        if ($term && !is_wp_error($term)) {
 
             $product->set_category_ids([
-                $term->term_id
+                (int) $term->term_id,
             ]);
         }
     }
 
 
-    /* ---------------------------------------------------------
-       PRODUCT IMAGE
-       --------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | PRODUCT IMAGE
+    |--------------------------------------------------------------------------
+    */
 
-    if ($req->get_param('image') !== null) {
+    if ($request->get_param('image') !== null) {
 
-        $attach_id =
+        $image_url = esc_url_raw(
+            $request->get_param('image')
+        );
+
+
+        $attachment_id =
             knovix_sideload_image_if_url(
-                $req->get_param('image')
+                $image_url
             );
 
-        if ($attach_id) {
+
+        if ($attachment_id) {
 
             $product->set_image_id(
-                $attach_id
+                $attachment_id
             );
         }
     }
 
 
-    /* ---------------------------------------------------------
-       BEST SELLER
-       --------------------------------------------------------- */
-
-    if ($req->get_param('bestSeller') !== null) {
-
-        /*
-         * WooCommerce doesn't have a native setter for this
-         * custom Knovix meta value.
-         */
-
-        add_action(
-            'woocommerce_after_product_object_save',
-            function ($p) use ($req) {
-
-                update_post_meta(
-                    $p->get_id(),
-                    '_knovix_bestseller',
-                    $req->get_param('bestSeller')
-                        ? 'yes'
-                        : 'no'
-                );
-            },
-            10,
-            1
-        );
-    }
-
-
-    /* ---------------------------------------------------------
-       PRODUCT STATUS
-       --------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | Product status
+    |--------------------------------------------------------------------------
+    */
 
     $product->set_status('publish');
 }
 
 
-/* =============================================================
-   IMPORT EXTERNAL IMAGE URL
-   ============================================================= */
+/*
+|--------------------------------------------------------------------------
+| Save Best Seller Meta
+|--------------------------------------------------------------------------
+|
+| WooCommerce doesn't have a native "best seller" boolean.
+|
+| We store:
+|
+| _knovix_bestseller = yes/no
+|
+*/
 
-function knovix_sideload_image_if_url($url) {
+function knovix_save_bestseller_meta(
+    WC_Product $product,
+    WP_REST_Request $request
+) {
+
+    if ($request->get_param('bestSeller') === null) {
+        return;
+    }
+
+
+    $best_seller = filter_var(
+        $request->get_param('bestSeller'),
+        FILTER_VALIDATE_BOOLEAN
+    );
+
+
+    update_post_meta(
+        $product->get_id(),
+        '_knovix_bestseller',
+        $best_seller ? 'yes' : 'no'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Sideload External Image
+|--------------------------------------------------------------------------
+*/
+
+function knovix_sideload_image_if_url($url)
+{
 
     if (
         !$url ||
@@ -487,6 +762,9 @@ function knovix_sideload_image_if_url($url) {
     }
 
 
+    /*
+     * WordPress media functions.
+     */
     require_once ABSPATH .
         'wp-admin/includes/media.php';
 
@@ -497,7 +775,10 @@ function knovix_sideload_image_if_url($url) {
         'wp-admin/includes/image.php';
 
 
-    $id = media_sideload_image(
+    /*
+     * Download image into WordPress Media Library.
+     */
+    $attachment_id = media_sideload_image(
         $url,
         0,
         null,
@@ -505,7 +786,11 @@ function knovix_sideload_image_if_url($url) {
     );
 
 
-    return is_wp_error($id)
-        ? null
-        : $id;
+    if (is_wp_error($attachment_id)) {
+
+        return null;
+    }
+
+
+    return (int) $attachment_id;
 }
