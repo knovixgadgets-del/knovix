@@ -8,13 +8,13 @@ export default function ProductsList() {
 
   function load() {
     setLoading(true)
-<<<<<<< HEAD
+
     getProducts()
       .then((items) => { setProducts(items); setLoading(false) })
       .catch(() => { setProducts([]); setLoading(false) })
-=======
+
     getProducts().then((items) => { setProducts(items); setLoading(false) })
->>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
+
   }
   useEffect(load, [])
 

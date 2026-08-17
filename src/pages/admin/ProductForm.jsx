@@ -15,15 +15,15 @@ export default function ProductForm() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-<<<<<<< HEAD
+
     if (isEdit) {
       getProduct(id)
         .then((p) => { setForm(p); setLoading(false) })
         .catch(() => { setError('Could not load this product.'); setLoading(false) })
     }
-=======
+
     if (isEdit) getProduct(id).then((p) => { setForm(p); setLoading(false) })
->>>>>>> 5ae76121209c169f14a8210984c1ac78eedf7bb3
+
   }, [id, isEdit])
 
   function update(key, value) { setForm((f) => ({ ...f, [key]: value })) }
