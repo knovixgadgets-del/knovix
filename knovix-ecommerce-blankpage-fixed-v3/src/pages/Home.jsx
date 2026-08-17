@@ -41,10 +41,12 @@ export default function Home() {
   const { d, h, m, s } = useCountdown()
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => setCategories([]))
+    getCategories()
+      .then((items) => setCategories(Array.isArray(items) ? items : []))
+      .catch(() => setCategories([]))
 
     getProducts()
-      .then(setProducts)
+      .then((items) => setProducts(Array.isArray(items) ? items : []))
       .catch(() => setProductsError(true))
 
   }, [])
