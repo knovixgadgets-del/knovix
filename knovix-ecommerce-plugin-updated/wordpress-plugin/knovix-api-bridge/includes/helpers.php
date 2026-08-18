@@ -30,6 +30,23 @@ function knovix_format_product($product) {
     if (!$product) return null;
     $image_id = $product->get_image_id();
     $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'large') : wc_placeholder_img_src('large');
+
+    // Gallery: featured image first, then any WooCommerce product gallery
+    // images. Powers the multi-image gallery on the product detail page —
+    // 'image' (singular) is kept as-is for existing callers/backwards
+    // compatibility and is always images[0].
+    $gallery_ids = array_filter(array_unique(array_merge(
+        [$image_id],
+        $product->get_gallery_image_ids()
+    )));
+    $images = array_values(array_filter(array_map(
+        fn($id) => wp_get_attachment_image_url($id, 'large'),
+        $gallery_ids
+    )));
+    if (empty($images)) {
+        $images = [$image_url];
+    }
+
     $categories = wc_get_product_category_list($product->get_id(), ', ', '', '');
     $terms = get_the_terms($product->get_id(), 'product_cat');
     $category_slug = $terms && !is_wp_error($terms) ? $terms[0]->slug : '';
@@ -44,6 +61,7 @@ function knovix_format_product($product) {
         'reviews'     => (int) $product->get_review_count(),
         'stock'       => $product->managing_stock() ? (int) $product->get_stock_quantity() : ($product->is_in_stock() ? 999 : 0),
         'image'       => $image_url,
+        'images'      => $images,
         'description' => wp_strip_all_tags($product->get_short_description() ?: $product->get_description()),
         'featured'    => (bool) $product->is_featured(),
         'bestSeller'  => get_post_meta($product->get_id(), '_knovix_bestseller', true) === 'yes'

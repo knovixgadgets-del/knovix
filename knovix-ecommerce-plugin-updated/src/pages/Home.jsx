@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
+import ImageCarousel from '../components/ImageCarousel'
 import { getCategories, getProducts } from '../api/products'
 import { testimonials } from '../data/mockData'
 
@@ -54,6 +55,13 @@ export default function Home() {
   const featured = products.filter((p) => p.featured)
   const bestSellers = products.filter((p) => p.bestSeller)
 
+  // Hero carousel: real product photos that click straight through to the
+  // product page, not a static stock image. Prefer featured products;
+  // fall back to whatever's loaded so the hero isn't empty early on.
+  const heroSlides = (featured.length > 0 ? featured : products)
+    .slice(0, 6)
+    .map((p) => ({ id: p.id, image: p.image, name: p.name }))
+
   return (
     <div>
       <section className="bg-gradient-to-br from-brand-50 to-teal-50">
@@ -88,11 +96,7 @@ export default function Home() {
               </div>
             </div>
             <div className="relative">
-              <img
-                src="https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&auto=format"
-                alt="Smart gadgets collection"
-                className="rounded-2xl w-full object-cover aspect-[4/3]"
-              />
+              <ImageCarousel slides={heroSlides} />
             </div>
           </div>
 

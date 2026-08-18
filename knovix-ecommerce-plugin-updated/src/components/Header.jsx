@@ -1,8 +1,9 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { useAuth } from '../context/AuthContext'
+import { CameraIcon } from './Icons'
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -41,6 +42,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
 
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
+  const cameraInputRef = useRef(null)
 
   function onSearch(e) {
     e.preventDefault()
@@ -49,6 +51,18 @@ export default function Header({ menuOpen, setMenuOpen }) {
       `/shop${query ? `?search=${encodeURIComponent(query)}` : ''}`
     )
 
+    setMenuOpen(false)
+  }
+
+  // Visual/camera search: WordPress's product API doesn't do image
+  // recognition, so this opens the device camera/photo picker and takes
+  // the shopper to the catalog with a note, rather than faking a match.
+  function onScanImage(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    navigate('/shop?visualSearch=1')
     setMenuOpen(false)
   }
 
@@ -114,6 +128,16 @@ export default function Header({ menuOpen, setMenuOpen }) {
           />
 
           <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            aria-label="Search by photo"
+            title="Search by photo"
+            className="border-y border-slate-300 px-3 text-slate-500 hover:text-brand-700"
+          >
+            <CameraIcon className="w-5 h-5" />
+          </button>
+
+          <button
             type="submit"
             className="btn-primary rounded-l-none px-4"
           >
@@ -121,8 +145,29 @@ export default function Header({ menuOpen, setMenuOpen }) {
           </button>
         </form>
 
+        {/* Shared hidden input for the camera-scan button (desktop + mobile) */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={onScanImage}
+          className="hidden"
+        />
+
         {/* Header actions */}
         <div className="flex items-center gap-5 ml-auto text-sm">
+
+          {/* Mobile-only quick links: Deals / New Arrivals / Brands,
+              placed on the header's right side instead of the promo
+              bar/hamburger menu on small screens. */}
+          <div className="flex sm:hidden items-center gap-2.5 text-[11px] font-medium text-slate-600 shrink-0">
+            {topLinks.map((l) => (
+              <Link key={l.label} to={l.to} className="hover:text-brand-700 whitespace-nowrap">
+                {l.label}
+              </Link>
+            ))}
+          </div>
 
           {/* Wishlist */}
           <Link
@@ -227,6 +272,36 @@ export default function Header({ menuOpen, setMenuOpen }) {
         </div>
       </div>
 
+      {/* Mobile search — same search bar as desktop, just always visible
+          instead of hidden behind the hamburger menu */}
+      <div className="lg:hidden container-px max-w-7xl mx-auto pb-3">
+        <form onSubmit={onSearch} className="flex">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search for gadgets, accessories..."
+            className="input rounded-r-none flex-1"
+          />
+
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            aria-label="Search by photo"
+            title="Search by photo"
+            className="border-y border-slate-300 px-3 text-slate-500 hover:text-brand-700"
+          >
+            <CameraIcon className="w-5 h-5" />
+          </button>
+
+          <button
+            type="submit"
+            className="btn-primary rounded-l-none px-4"
+          >
+            🔍
+          </button>
+        </form>
+      </div>
+
       {/* Desktop navigation */}
       <nav className="hidden lg:block border-t border-slate-100">
         <div className="container-px max-w-7xl mx-auto flex items-center gap-6 py-2 text-sm font-medium">
@@ -252,26 +327,6 @@ export default function Header({ menuOpen, setMenuOpen }) {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="lg:hidden border-t border-slate-100 px-4 py-3 space-y-3">
-
-          {/* Mobile search */}
-          <form
-            onSubmit={onSearch}
-            className="flex"
-          >
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..."
-              className="input rounded-r-none flex-1"
-            />
-
-            <button
-              type="submit"
-              className="btn-primary rounded-l-none px-4"
-            >
-              🔍
-            </button>
-          </form>
 
           {/* Mobile navigation */}
           <nav className="flex flex-col space-y-1">

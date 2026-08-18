@@ -17,6 +17,7 @@ export default function Shop() {
   const category = params.get('category') || ''
   const search = params.get('search') || ''
   const sort = params.get('sort') || ''
+  const visualSearch = params.get('visualSearch') === '1'
 
   // Load categories
   useEffect(() => {
@@ -205,6 +206,23 @@ export default function Shop() {
           </select>
 
         </div>
+
+        {/* Visual search notice — the camera-scan button in the header
+            doesn't do image recognition against the WordPress catalog (no
+            such API exists yet), so it's honest about showing the full
+            catalog instead of faking a match. */}
+        {visualSearch && (
+          <div className="mb-4 flex items-center justify-between gap-3 bg-brand-50 text-brand-700 text-sm rounded-md px-3 py-2">
+            <span>📷 Visual search is in preview — showing the full catalog for now. Try text search for exact matches.</span>
+            <button
+              type="button"
+              onClick={() => setParam('visualSearch', '')}
+              className="text-brand-700 hover:text-brand-900 font-medium shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Loading */}
         {loading ? (

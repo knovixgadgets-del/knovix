@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import StarRating from './StarRating'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
@@ -6,15 +6,8 @@ import { useWishlist } from '../context/WishlistContext'
 export default function ProductCard({ product }) {
   const { addItem } = useCart()
   const { toggle, isWishlisted } = useWishlist()
-  const navigate = useNavigate()
 
   const off = Math.round(((product.mrp - product.price) / product.mrp) * 100)
-
-  function handleBuyNow(e) {
-    e.preventDefault()
-    addItem(product, 1)
-    navigate('/checkout')
-  }
 
   return (
     <div className="card p-3 flex flex-col group">
@@ -69,23 +62,15 @@ export default function ProductCard({ product }) {
         </p>
       )}
 
-      <div className="flex gap-2 mt-3">
-        <button
-          onClick={() => addItem(product, 1)}
-          disabled={product.stock === 0}
-          className="btn-outline flex-1 text-xs py-2"
-        >
-          🛒 {product.stock === 0 ? 'Out of stock' : 'Add to Cart'}
-        </button>
-
-        <button
-          onClick={handleBuyNow}
-          disabled={product.stock === 0}
-          className="btn-primary flex-1 text-xs py-2"
-        >
-          ⚡ Buy Now
-        </button>
-      </div>
+      {/* Buy Now lives on the product detail page only — this card just
+          adds to cart, matching Amazon's compact single-button card CTA. */}
+      <button
+        onClick={() => addItem(product, 1)}
+        disabled={product.stock === 0}
+        className="btn-outline w-full h-9 mt-3 text-xs whitespace-nowrap"
+      >
+        🛒 {product.stock === 0 ? 'Out of stock' : 'Add to Cart'}
+      </button>
     </div>
   )
 }

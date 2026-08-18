@@ -50,6 +50,7 @@ export default function ProductDetail() {
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [activeImage, setActiveImage] = useState(0)
 
   const { addItem } = useCart()
   const { toggle, isWishlisted } = useWishlist()
@@ -63,6 +64,7 @@ export default function ProductDetail() {
     setError(false)
     setLinkCopied(false)
     setQty(1)
+    setActiveImage(0)
 
     getProduct(id)
       .then((p) => {
@@ -149,15 +151,49 @@ export default function ProductDetail() {
       ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
       : 0
 
+  // Products come from the WordPress gallery (helpers.php returns an
+  // `images` array — featured image first, then gallery images). Fall back
+  // to the single `image` field for older API responses so this never
+  // renders a broken gallery.
+  const gallery =
+    Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : [product.image]
+
   return (
     <div className="container-px max-w-7xl mx-auto py-8">
       <div className="grid md:grid-cols-2 gap-10">
-        <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
+        <div>
+          <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+            <img
+              src={gallery[activeImage] || gallery[0]}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {gallery.length > 1 && (
+            <div className="mt-3 flex gap-2 overflow-x-auto">
+              {gallery.map((src, i) => (
+                <button
+                  key={src + i}
+                  type="button"
+                  onClick={() => setActiveImage(i)}
+                  className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                    i === activeImage
+                      ? 'border-brand-600'
+                      : 'border-transparent'
+                  }`}
+                >
+                  <img
+                    src={src}
+                    alt={`${product.name} thumbnail ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -251,7 +287,7 @@ export default function ProductDetail() {
               type="button"
               onClick={handleAddToCart}
               disabled={product.stock === 0}
-              className="btn-outline flex-1"
+              className="btn-outline flex-1 h-10 text-sm whitespace-nowrap"
             >
               {added ? 'Added ✓' : '🛒 Add to Cart'}
             </button>
@@ -260,7 +296,7 @@ export default function ProductDetail() {
               type="button"
               onClick={handleBuyNow}
               disabled={product.stock === 0}
-              className="btn-primary flex-1"
+              className="btn-primary flex-1 h-10 text-sm whitespace-nowrap"
             >
               ⚡ Buy Now
             </button>
