@@ -131,16 +131,26 @@ export default function Header({ menuOpen, setMenuOpen }) {
           />
         </Link>
 
-        {/* Desktop search */}
+        {/* Search — one continuous pill with the lens icon and camera
+            icon sitting inside it, the way Amazon's search bar does,
+            instead of as separate buttons bolted on outside */}
         <form
           onSubmit={onSearch}
-          className="hidden lg:flex flex-1 max-w-xl"
+          className="relative flex flex-1 min-w-0 sm:max-w-xl"
         >
+          <button
+            type="submit"
+            aria-label="Search"
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full text-slate-500 hover:text-brand-700 hover:bg-slate-100"
+          >
+            <SearchIcon className="w-4.5 h-4.5" />
+          </button>
+
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for gadgets, accessories..."
-            className="input rounded-r-none h-10"
+            placeholder="Search gadgets, accessories..."
+            className="input h-10 min-w-0 w-full rounded-full pl-9 pr-11 truncate"
           />
 
           <button
@@ -148,17 +158,9 @@ export default function Header({ menuOpen, setMenuOpen }) {
             onClick={() => cameraInputRef.current?.click()}
             aria-label="Search by photo"
             title="Search by photo"
-            className="flex items-center justify-center border-y border-slate-300 px-3 text-slate-500 hover:text-brand-700 h-10"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full text-slate-500 hover:text-brand-700 hover:bg-slate-100"
           >
             <CameraIcon className="w-5 h-5" />
-          </button>
-
-          <button
-            type="submit"
-            aria-label="Search"
-            className="btn-primary rounded-l-none px-4 h-10"
-          >
-            <SearchIcon className="w-5 h-5" />
           </button>
         </form>
 
@@ -327,39 +329,11 @@ export default function Header({ menuOpen, setMenuOpen }) {
         </div>
       </div>
 
-      {/* Mobile search — standard mobile sizing, lens (search) + camera
-          icons styled like Amazon's search bar */}
+      {/* Quick category chips (mobile only) — sit directly under the
+          header row that now holds the search bar, instead of under a
+          second separate search row */}
       <div className="lg:hidden container-px max-w-7xl mx-auto pb-2.5">
-        <form onSubmit={onSearch} className="flex h-10">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for gadgets, accessories..."
-            className="input rounded-r-none flex-1 h-10 text-sm"
-          />
-
-          <button
-            type="button"
-            onClick={() => cameraInputRef.current?.click()}
-            aria-label="Search by photo"
-            title="Search by photo"
-            className="flex items-center justify-center border-y border-slate-300 px-2.5 text-slate-500 hover:text-brand-700 h-10 w-10 shrink-0"
-          >
-            <CameraIcon className="w-5 h-5" />
-          </button>
-
-          <button
-            type="submit"
-            aria-label="Search"
-            className="btn-primary rounded-l-none px-3.5 h-10 w-11 shrink-0"
-          >
-            <SearchIcon className="w-5 h-5" />
-          </button>
-        </form>
-
-        {/* Quick category chips — placed under the search bar (not in the
-            hero section) so they read as part of header navigation */}
-        <nav className="flex flex-wrap items-center gap-2 mt-2.5">
+        <nav className="flex flex-wrap items-center gap-2">
           {quickLinks.map((l) => (
             <Link
               key={l.label}
