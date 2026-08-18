@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import ImageCarousel from '../components/ImageCarousel'
+import AnimatedHero from '../components/AnimatedHero'
 import { getCategories, getProducts } from '../api/products'
 import { testimonials } from '../data/mockData'
-
-const heroNav = [
-  { to: '/shop?sort=price_asc', label: 'Deals', icon: '🔥' },
-  { to: '/shop?sort=newest', label: 'New Arrivals', icon: '✨' },
-  { to: '/brands', label: 'Brands', icon: '🏷️' }
-]
 
 const perks = [
   ['🚚', 'Free Shipping Across India', 'On orders above ₹499'],
@@ -55,34 +49,18 @@ export default function Home() {
   const featured = products.filter((p) => p.featured)
   const bestSellers = products.filter((p) => p.bestSeller)
 
-  // Hero carousel: real product photos that click straight through to the
-  // product page, not a static stock image. Prefer featured products;
-  // fall back to whatever's loaded so the hero isn't empty early on.
-  const heroSlides = (featured.length > 0 ? featured : products)
-    .slice(0, 6)
-    .map((p) => ({ id: p.id, image: p.image, name: p.name }))
+  // Hero products: real, hyperlinked product cards, not stock imagery.
+  // Prefer featured products; fall back to whatever's loaded so the hero
+  // isn't empty early on.
+  const heroProducts = (featured.length > 0 ? featured : products).slice(0, 3)
 
   return (
     <div>
-      <section className="bg-gradient-to-br from-brand-50 to-teal-50">
+      <section className="bg-gradient-to-br from-brand-50 to-teal-50 overflow-hidden">
         <div className="container-px max-w-7xl mx-auto">
 
-          {/* Hero quick nav: Deals / New Arrivals / Brands */}
-          <nav className="flex flex-wrap items-center gap-2 pt-6 text-sm font-medium">
-            {heroNav.map((l) => (
-              <Link
-                key={l.label}
-                to={l.to}
-                className="inline-flex items-center gap-1.5 bg-white/80 hover:bg-white text-slate-700 hover:text-brand-700 border border-slate-200 rounded-full px-4 py-1.5 transition-colors"
-              >
-                <span>{l.icon}</span>
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="grid md:grid-cols-2 gap-8 items-center py-10">
-            <div>
+          <div className="grid md:grid-cols-2 gap-10 items-center py-10 md:py-14">
+            <div className="hero-in">
               <span className="badge-off inline-block mb-4">NEW COLLECTION</span>
               <h1 className="text-4xl sm:text-5xl font-bold leading-tight">
                 Smart Gadgets.<br /><span className="text-brand-600">Smarter</span> Living.
@@ -95,9 +73,8 @@ export default function Home() {
                 <Link to="/shop?sort=price_asc" className="btn-outline bg-white">Explore Deals</Link>
               </div>
             </div>
-            <div className="relative">
-              <ImageCarousel slides={heroSlides} />
-            </div>
+
+            <AnimatedHero products={heroProducts} />
           </div>
 
         </div>

@@ -1,9 +1,17 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { useAuth } from '../context/AuthContext'
-import { CameraIcon } from './Icons'
+import { getCategories } from '../api/products'
+import {
+  CameraIcon,
+  SearchIcon,
+  HeartIcon,
+  AccountIcon,
+  CartIcon,
+  CategoryIcon
+} from './Icons'
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -17,8 +25,9 @@ const navLinks = [
   { to: '/contact', label: 'Contact' }
 ]
 
-// Mobile menu drops Deals / New Arrivals / Brands — they stay in the
-// desktop nav and the scrolling promo bar (topLinks) below.
+// Mobile menu drops Deals / New Arrivals / Brands — they live in the single
+// quick-nav strip under the mobile search bar instead (see quickLinks
+// below), so they don't appear a second time inside the hamburger menu.
 const mobileHiddenLabels = ['Deals', 'New Arrivals', 'Brands']
 const mobileNavLinks = navLinks.filter((l) => !mobileHiddenLabels.includes(l.label))
 
@@ -29,10 +38,15 @@ const promoMessages = [
   '⚡ Mega Deals Live Now — Shop Today!'
 ]
 
-const topLinks = [
-  { to: '/shop?sort=price_asc', label: 'Deals' },
-  { to: '/shop?sort=newest', label: 'New Arrivals' },
-  { to: '/brands', label: 'Brands' }
+// Single source of truth for the Deals / New Arrivals / Brands quick links.
+// Previously this same list was duplicated three times (promo bar, a
+// mobile action-row, and the homepage hero) — it now renders in exactly
+// one place per breakpoint: the desktop nav row, and a chip strip under
+// the mobile search bar.
+const quickLinks = [
+  { to: '/shop?sort=price_asc', label: 'Deals', icon: '🔥' },
+  { to: '/shop?sort=newest', label: 'New Arrivals', icon: '✨' },
+  { to: '/brands', label: 'Brands', icon: '🏷️' }
 ]
 
 export default function Header({ menuOpen, setMenuOpen }) {
@@ -41,8 +55,25 @@ export default function Header({ menuOpen, setMenuOpen }) {
   const { user, logout, isAdmin } = useAuth()
 
   const [query, setQuery] = useState('')
+  const [categories, setCategories] = useState([])
+  const [catOpen, setCatOpen] = useState(false)
   const navigate = useNavigate()
   const cameraInputRef = useRef(null)
+  const catRef = useRef(null)
+
+  useEffect(() => {
+    getCategories()
+      .then((items) => setCategories(Array.isArray(items) ? items.slice(0, 8) : []))
+      .catch(() => setCategories([]))
+  }, [])
+
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (catRef.current && !catRef.current.contains(e.target)) setCatOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
   function onSearch(e) {
     e.preventDefault()
@@ -69,10 +100,11 @@ export default function Header({ menuOpen, setMenuOpen }) {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-100">
 
-      {/* Promo bar */}
+      {/* Promo bar — scrolling messages only; Deals/New Arrivals/Brands
+          live in one place per breakpoint (see quickLinks) so they don't
+          repeat here too. */}
       <div className="bg-ink-900 text-white text-xs overflow-hidden">
-        <div className="container-px max-w-7xl mx-auto flex items-center gap-3 sm:gap-6 py-1.5">
-
+        <div className="container-px max-w-7xl mx-auto flex items-center py-1.5">
           <div className="flex-1 min-w-0 overflow-hidden">
             <div className="marquee-track flex items-center gap-10 whitespace-nowrap w-max">
               {[...promoMessages, ...promoMessages].map((msg, i) => (
@@ -80,39 +112,23 @@ export default function Header({ menuOpen, setMenuOpen }) {
               ))}
             </div>
           </div>
-
-          <div className="hidden sm:flex items-center gap-3 sm:gap-4 shrink-0 font-medium">
-            {topLinks.map((l) => (
-              <Link
-                key={l.label}
-                to={l.to}
-                className="hover:text-brand-300 whitespace-nowrap"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
-
         </div>
       </div>
 
       {/* Main header */}
-      <div className="container-px max-w-7xl mx-auto flex items-center gap-4 py-3">
+      <div className="container-px max-w-7xl mx-auto flex items-center gap-3 sm:gap-4 py-2.5 sm:py-3">
 
-        {/* Logo */}
+        {/* Logo — small, fixed-height mark so it never crowds the row */}
         <Link
           to="/"
-          className="flex flex-col leading-none shrink-0"
+          className="flex items-center shrink-0"
+          aria-label="Knovix — home"
         >
-          <span className="text-2xl font-extrabold font-display tracking-tight">
-            <span className="text-brand-600">
-              KNOVIX
-            </span>
-          </span>
-
-          <span className="text-[10px] tracking-[0.3em] text-slate-500">
-            GADGETS
-          </span>
+          <img
+            src="/brand/knovix-logo-trimmed.png"
+            alt="Knovix"
+            className="h-8 sm:h-9 w-auto object-contain"
+          />
         </Link>
 
         {/* Desktop search */}
@@ -124,7 +140,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for gadgets, accessories..."
-            className="input rounded-r-none"
+            className="input rounded-r-none h-10"
           />
 
           <button
@@ -132,16 +148,17 @@ export default function Header({ menuOpen, setMenuOpen }) {
             onClick={() => cameraInputRef.current?.click()}
             aria-label="Search by photo"
             title="Search by photo"
-            className="border-y border-slate-300 px-3 text-slate-500 hover:text-brand-700"
+            className="flex items-center justify-center border-y border-slate-300 px-3 text-slate-500 hover:text-brand-700 h-10"
           >
             <CameraIcon className="w-5 h-5" />
           </button>
 
           <button
             type="submit"
-            className="btn-primary rounded-l-none px-4"
+            aria-label="Search"
+            className="btn-primary rounded-l-none px-4 h-10"
           >
-            🔍
+            <SearchIcon className="w-5 h-5" />
           </button>
         </form>
 
@@ -156,17 +173,53 @@ export default function Header({ menuOpen, setMenuOpen }) {
         />
 
         {/* Header actions */}
-        <div className="flex items-center gap-5 ml-auto text-sm">
+        <div className="flex items-center gap-4 sm:gap-5 ml-auto text-sm">
 
-          {/* Mobile-only quick links: Deals / New Arrivals / Brands,
-              placed on the header's right side instead of the promo
-              bar/hamburger menu on small screens. */}
-          <div className="flex sm:hidden items-center gap-2.5 text-[11px] font-medium text-slate-600 shrink-0">
-            {topLinks.map((l) => (
-              <Link key={l.label} to={l.to} className="hover:text-brand-700 whitespace-nowrap">
-                {l.label}
-              </Link>
-            ))}
+          {/* Categories — sits opposite the logo, balancing the row on
+              mobile the way most storefronts pair a small logo mark with
+              an "All Categories" entry point on the other edge. */}
+          <div className="relative" ref={catRef}>
+            <button
+              type="button"
+              onClick={() => setCatOpen((v) => !v)}
+              aria-expanded={catOpen}
+              aria-label="Browse categories"
+              className="flex flex-col items-center text-slate-600 hover:text-brand-700"
+            >
+              <CategoryIcon className="w-5 h-5" />
+              <span className="hidden sm:block text-xs mt-0.5">Categories</span>
+            </button>
+
+            {catOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white card p-2 z-50">
+                <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  Shop by Category
+                </p>
+
+                {categories.length === 0 && (
+                  <p className="px-2 py-1.5 text-sm text-slate-500">Loading…</p>
+                )}
+
+                {categories.map((c) => (
+                  <Link
+                    key={c.id}
+                    to={`/shop?category=${c.id}`}
+                    onClick={() => setCatOpen(false)}
+                    className="block px-2 py-1.5 rounded hover:bg-slate-50 text-sm truncate"
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+
+                <Link
+                  to="/shop"
+                  onClick={() => setCatOpen(false)}
+                  className="block px-2 py-1.5 rounded hover:bg-slate-50 text-sm font-medium text-brand-700 border-t border-slate-100 mt-1 pt-2"
+                >
+                  View All Categories →
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Wishlist */}
@@ -174,14 +227,16 @@ export default function Header({ menuOpen, setMenuOpen }) {
             to="/wishlist"
             className="hidden lg:flex flex-col items-center text-slate-600 hover:text-brand-700"
           >
-            <span>
-              ♡{' '}
+            <span className="relative">
+              <HeartIcon className="w-5 h-5" />
               {wishCount > 0 && (
-                <sup>{wishCount}</sup>
+                <span className="absolute -top-1.5 -right-2 bg-brand-600 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+                  {wishCount}
+                </span>
               )}
             </span>
 
-            <span className="text-xs">
+            <span className="text-xs mt-0.5">
               Wishlist
             </span>
           </Link>
@@ -193,9 +248,9 @@ export default function Header({ menuOpen, setMenuOpen }) {
               type="button"
               className="flex flex-col items-center text-slate-600 hover:text-brand-700"
             >
-              <span>👤</span>
+              <AccountIcon className="w-5 h-5" />
 
-              <span className="text-xs">
+              <span className="text-xs mt-0.5">
                 {user
                   ? user.name?.split(' ')[0] || 'Account'
                   : 'Account'}
@@ -256,9 +311,9 @@ export default function Header({ menuOpen, setMenuOpen }) {
             to="/cart"
             className="hidden lg:flex relative flex-col items-center text-slate-600 hover:text-brand-700"
           >
-            <span>🛒</span>
+            <CartIcon className="w-5 h-5" />
 
-            <span className="text-xs">
+            <span className="text-xs mt-0.5">
               Cart
             </span>
 
@@ -272,15 +327,15 @@ export default function Header({ menuOpen, setMenuOpen }) {
         </div>
       </div>
 
-      {/* Mobile search — same search bar as desktop, just always visible
-          instead of hidden behind the hamburger menu */}
-      <div className="lg:hidden container-px max-w-7xl mx-auto pb-3">
-        <form onSubmit={onSearch} className="flex">
+      {/* Mobile search — standard mobile sizing, lens (search) + camera
+          icons styled like Amazon's search bar */}
+      <div className="lg:hidden container-px max-w-7xl mx-auto pb-2.5">
+        <form onSubmit={onSearch} className="flex h-10">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for gadgets, accessories..."
-            className="input rounded-r-none flex-1"
+            className="input rounded-r-none flex-1 h-10 text-sm"
           />
 
           <button
@@ -288,18 +343,34 @@ export default function Header({ menuOpen, setMenuOpen }) {
             onClick={() => cameraInputRef.current?.click()}
             aria-label="Search by photo"
             title="Search by photo"
-            className="border-y border-slate-300 px-3 text-slate-500 hover:text-brand-700"
+            className="flex items-center justify-center border-y border-slate-300 px-2.5 text-slate-500 hover:text-brand-700 h-10 w-10 shrink-0"
           >
             <CameraIcon className="w-5 h-5" />
           </button>
 
           <button
             type="submit"
-            className="btn-primary rounded-l-none px-4"
+            aria-label="Search"
+            className="btn-primary rounded-l-none px-3.5 h-10 w-11 shrink-0"
           >
-            🔍
+            <SearchIcon className="w-5 h-5" />
           </button>
         </form>
+
+        {/* Quick category chips — placed under the search bar (not in the
+            hero section) so they read as part of header navigation */}
+        <nav className="flex flex-wrap items-center gap-2 mt-2.5">
+          {quickLinks.map((l) => (
+            <Link
+              key={l.label}
+              to={l.to}
+              className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-brand-50 text-slate-700 hover:text-brand-700 border border-slate-200 rounded-full px-3 py-1 text-xs font-medium transition-colors"
+            >
+              <span>{l.icon}</span>
+              {l.label}
+            </Link>
+          ))}
+        </nav>
       </div>
 
       {/* Desktop navigation */}
@@ -359,9 +430,9 @@ export default function Header({ menuOpen, setMenuOpen }) {
                 <Link
                   to="/account"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-3 py-2 rounded hover:bg-slate-50"
+                  className="flex items-center gap-2 px-3 py-2 rounded hover:bg-slate-50"
                 >
-                  👤 My Account
+                  <AccountIcon className="w-4 h-4" /> My Account
                 </Link>
 
                 {isAdmin && (
@@ -413,8 +484,8 @@ export default function Header({ menuOpen, setMenuOpen }) {
             onClick={() => setMenuOpen(false)}
             className="flex items-center justify-between px-3 py-2 rounded bg-slate-50"
           >
-            <span>
-              🛒 Cart
+            <span className="flex items-center gap-2">
+              <CartIcon className="w-4 h-4" /> Cart
             </span>
 
             {count > 0 && (

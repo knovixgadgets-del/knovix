@@ -66,3 +66,43 @@ export function CameraIcon({ className = 'w-5 h-5' }) {
     </svg>
   )
 }
+
+// Magnifying-glass "lens" search icon — same stroke weight/style as the
+// rest of the set, sized and paired with CameraIcon the way Amazon's
+// search bar pairs a lens icon with a camera/lens-scan icon.
+export function SearchIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m20 20-4.3-4.3" />
+    </svg>
+  )
+}
+
+export function HeartIcon({ className = 'w-5 h-5', filled = false }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      {...base}
+      fill={filled ? 'currentColor' : 'none'}
+    >
+      <path d="M12 20.2s-7.3-4.4-9.8-9C.6 7.7 2.4 4 6 4c2.1 0 3.6 1.2 6 3.6C14.4 5.2 15.9 4 18 4c3.6 0 5.4 3.7 3.8 7.2-2.5 4.6-9.8 9-9.8 9Z" />
+    </svg>
+  )
+}
+
+// Grid/menu "categories" icon — used next to the logo (opposite side) as
+// an "All Categories" entry point, the way most ecommerce apps balance
+// the header with logo on one side and a categories/menu affordance on
+// the other.
+export function CategoryIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.3" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.3" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.3" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.3" />
+    </svg>
+  )
+}
