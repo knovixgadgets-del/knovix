@@ -16,9 +16,9 @@ import {
 } from './Icons'
 
 const promoMessages = [
-  '🚚 Free Shipping on all orders above ₹499',
+  '🚚 Free Shipping on all orders above ₹199',
   '🔄 7-Day Easy Replacement',
-  '🎧 24/7 Customer Support',
+  '💬 24/7 Customer Support',
   '⚡ Mega Deals Live Now — Shop Today!'
 ]
 
