@@ -1,23 +1,37 @@
-{
-  "name": "knovix-ecommerce",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50: '#f2f8fa',
+          100: '#e1f0f4',
+          200: '#c0dfe7',
+          300: '#8dc8d8',
+          400: '#52aec7',
+          500: '#328ca4',
+          600: '#247085', // primary peacock (logo, buttons, links, prices)
+          700: '#1b596a',
+          800: '#154451',
+          900: '#10333c'
+        },
+        ink: {
+          900: '#0f2530', // deep peacock-navy for footer / darkest UI
+          800: '#1e3a47'  // heading text, tuned to sit with the peacock palette
+        },
+        amber: {
+          400: '#fab816' // star rating gold
+        }
+      },
+      fontFamily: {
+        display: ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        body: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(15,37,48,0.06), 0 1px 8px rgba(15,37,48,0.05)'
+      }
+    }
   },
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.40",
-    "tailwindcss": "^3.4.7",
-    "vite": "^5.3.4"
-  }
+  plugins: []
 }
