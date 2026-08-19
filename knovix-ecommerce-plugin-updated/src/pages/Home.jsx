@@ -7,10 +7,10 @@ import { getCategories, getProducts } from '../api/products'
 import { testimonials } from '../data/mockData'
 
 const perks = [
-  ['🚚', 'Free Shipping Across India', 'On orders above ₹499'],
+  ['🚚', 'Free Shipping Across India', 'On orders above ₹199'],
   ['🔄', '7-Day Easy Replacement', 'For damaged or defective products'],
   ['🛡️', '100% Secure Payments', 'Multiple secure payment options'],
-  ['🎧', '24/7 Customer Support', "We're here to help anytime, anywhere"]
+  ['💬', '24/7 Customer Support', "We're here to help anytime, anywhere"]
 ]
 
 const heroGradients = [

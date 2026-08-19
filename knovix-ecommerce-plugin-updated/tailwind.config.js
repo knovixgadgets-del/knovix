@@ -5,23 +5,23 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#eefaf8',
-          100: '#d3f1ec',
-          200: '#a6e3d8',
-          300: '#6fd0bf',
-          400: '#38b6a1',
-          500: '#0f8f7e',
-          600: '#0c7367',
-          700: '#0a5c53',
-          800: '#0a4a44',
-          900: '#093c38'
+          50: '#f1fbfc',
+          100: '#d6f3f3',
+          200: '#a7e5e7',
+          300: '#6fd3d5',
+          400: '#34bcbf',
+          500: '#0a9599',
+          600: '#08797c', // primary brand teal (logo, buttons, links, prices)
+          700: '#076264',
+          800: '#084f51',
+          900: '#074143'
         },
         ink: {
-          900: '#0b1220',
-          800: '#111a2b'
+          900: '#182127', // footer / darkest UI (measured from footer bg)
+          800: '#272c31'  // heading text (measured from "Smart Gadgets" copy)
         },
         amber: {
-          400: '#f5a623'
+          400: '#fab816' // star rating gold
         }
       },
       fontFamily: {
@@ -29,7 +29,7 @@ export default {
         body: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
       },
       boxShadow: {
-        card: '0 1px 2px rgba(11,18,32,0.06), 0 1px 8px rgba(11,18,32,0.04)'
+        card: '0 1px 2px rgba(24,33,39,0.06), 0 1px 8px rgba(24,33,39,0.04)'
       }
     }
   },
