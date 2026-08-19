@@ -4,6 +4,7 @@ import StarRating from '../components/StarRating'
 import { getProduct, getProducts } from '../api/products'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
+import { getDisplayRating } from '../utils/rating'
 
 const RECENTLY_VIEWED_KEY = 'knovix_recently_viewed'
 
@@ -201,7 +202,7 @@ export default function ProductDetail() {
 
           <div className="mt-2">
             <StarRating
-              rating={product.rating}
+              rating={getDisplayRating(product)}
               reviews={product.reviews}
             />
           </div>

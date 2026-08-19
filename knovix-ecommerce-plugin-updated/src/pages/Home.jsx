@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import HeroCarousel from '../components/HeroCarousel'
+import { CategoryIcon } from '../components/Icons'
 import { getCategories, getProducts } from '../api/products'
 import { testimonials } from '../data/mockData'
 
@@ -43,6 +44,31 @@ function ProductGridSkeleton({ count = 5 }) {
           <div className="h-9 rounded bg-slate-100 animate-pulse mt-3" />
         </div>
       ))}
+    </div>
+  )
+}
+
+// A broken/missing category image used to fall through to the browser's
+// default broken-image icon, which renders at its own intrinsic size and
+// spills text out of the card instead of staying inside the fixed square —
+// this swaps in a clean placeholder the moment the image errors out.
+function CategoryThumb({ image, name }) {
+  const [errored, setErrored] = useState(false)
+  const showFallback = !image || errored
+
+  return (
+    <div className="aspect-square rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+      {showFallback ? (
+        <CategoryIcon className="w-6 h-6 text-slate-300" />
+      ) : (
+        <img
+          src={image}
+          alt={name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+          loading="lazy"
+          onError={() => setErrored(true)}
+        />
+      )}
     </div>
   )
 }
@@ -114,13 +140,13 @@ export default function Home() {
     <div>
       <HeroCarousel slides={heroSlides} />
 
-      <section className="container-px max-w-7xl mx-auto py-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="container-px max-w-7xl mx-auto py-4 grid grid-cols-2 md:grid-cols-4 gap-2.5">
         {perks.map(([icon, title, desc]) => (
-          <div key={title} className="card p-3.5 flex items-start gap-3">
-            <span className="text-xl shrink-0">{icon}</span>
+          <div key={title} className="card px-3 py-2.5 flex items-center gap-2.5">
+            <span className="text-lg shrink-0">{icon}</span>
             <div className="min-w-0">
-              <p className="font-semibold text-sm leading-tight">{title}</p>
-              <p className="text-xs text-slate-500 mt-0.5 leading-snug">{desc}</p>
+              <p className="font-semibold text-[13px] leading-tight truncate">{title}</p>
+              <p className="text-[11px] text-slate-500 leading-snug truncate">{desc}</p>
             </div>
           </div>
         ))}
@@ -146,11 +172,9 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
             {categories.map((c) => (
-              <Link key={c.id} to={`/shop?category=${c.id}`} className="text-center group">
-                <div className="aspect-square rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
-                  <img src={c.image} alt={c.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
-                </div>
-                <p className="text-xs mt-1.5 font-medium truncate">{c.name}</p>
+              <Link key={c.id} to={`/shop?category=${c.id}`} className="block text-center group w-full min-w-0">
+                <CategoryThumb image={c.image} name={c.name} />
+                <p className="text-xs mt-1.5 font-medium truncate w-full">{c.name}</p>
               </Link>
             ))}
           </div>

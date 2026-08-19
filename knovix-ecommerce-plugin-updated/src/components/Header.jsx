@@ -116,98 +116,118 @@ export default function Header({ menuOpen, setMenuOpen }) {
             on the left, then the input, then the lens button on the right
             after the text — the same layout at every breakpoint, the way
             Amazon's search bar is built. */}
+        {/* The dropdown panel below needs to sit OUTSIDE the bar's
+            overflow-hidden (which only exists to clip/round the input,
+            camera and lens buttons) — otherwise it gets clipped invisible
+            and the category icon looks like it does nothing, especially
+            on mobile/tablet. So overflow-hidden lives on the inner bar,
+            and the panel is a sibling positioned against this outer,
+            non-clipping wrapper. */}
         <form
           onSubmit={onSearch}
-          className="flex items-stretch flex-1 min-w-0 sm:max-w-xl h-10 rounded-md border border-slate-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-brand-400 focus-within:border-brand-400"
+          className="relative flex-1 min-w-0 sm:max-w-xl"
         >
-          <div className="relative shrink-0" ref={catRef}>
+          <div className="flex items-stretch h-10 rounded-md border border-slate-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-brand-400 focus-within:border-brand-400">
+            <div className="shrink-0" ref={catRef}>
+              <button
+                type="button"
+                onClick={() => setCatOpen((v) => !v)}
+                aria-expanded={catOpen}
+                aria-label="Browse categories"
+                className="flex items-center gap-1 h-full px-2.5 sm:px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium border-r border-slate-300 max-w-[64px] sm:max-w-[130px]"
+              >
+                <CategoryIcon className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline truncate">
+                  {category ? category.name : 'All'}
+                </span>
+                <ChevronDownIcon className="hidden sm:inline w-3.5 h-3.5 shrink-0 text-slate-400" />
+              </button>
+            </div>
+
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search gadgets, accessories..."
+              className="flex-1 min-w-0 h-full px-3 text-sm focus:outline-none"
+            />
+
             <button
               type="button"
-              onClick={() => setCatOpen((v) => !v)}
-              aria-expanded={catOpen}
-              aria-label="Browse categories"
-              className="flex items-center gap-1 h-full px-2.5 sm:px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium border-r border-slate-300 max-w-[64px] sm:max-w-[130px]"
+              onClick={() => cameraInputRef.current?.click()}
+              aria-label="Search by photo"
+              title="Search by photo"
+              className="flex items-center justify-center w-9 shrink-0 text-slate-500 hover:text-brand-700"
             >
-              <CategoryIcon className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline truncate">
-                {category ? category.name : 'All'}
-              </span>
-              <ChevronDownIcon className="hidden sm:inline w-3.5 h-3.5 shrink-0 text-slate-400" />
+              <CameraIcon className="w-[18px] h-[18px]" />
             </button>
 
-            {catOpen && (
-              <div className="absolute left-0 mt-1 w-60 bg-white card p-1.5 z-50">
-                <p className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                  Shop by Category
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => { setCategory(null); setCatOpen(false) }}
-                  className={`w-full text-left px-2.5 py-2 rounded text-sm ${
-                    !category ? 'bg-brand-50 text-brand-700 font-medium' : 'hover:bg-slate-50'
-                  }`}
-                >
-                  All Categories
-                </button>
-
-                {categoriesError && (
-                  <div className="px-2.5 py-2 text-sm text-slate-500 flex items-center justify-between gap-2">
-                    <span>Couldn't load categories.</span>
-                    <button type="button" onClick={loadCategories} className="text-brand-700 font-medium shrink-0">
-                      Retry
-                    </button>
-                  </div>
-                )}
-
-                {!categoriesError && categories.length === 0 && (
-                  <div className="px-2.5 py-1.5 space-y-1.5">
-                    {[0, 1, 2].map((i) => (
-                      <div key={i} className="h-6 rounded bg-slate-100 animate-pulse" />
-                    ))}
-                  </div>
-                )}
-
-                {categories.map((c) => (
-                  <button
-                    type="button"
-                    key={c.id}
-                    onClick={() => { setCategory(c); setCatOpen(false) }}
-                    className={`block w-full text-left px-2.5 py-2 rounded text-sm truncate ${
-                      category?.id === c.id ? 'bg-brand-50 text-brand-700 font-medium' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            )}
+            <button
+              type="submit"
+              aria-label="Search"
+              className="flex items-center justify-center w-11 shrink-0 bg-brand-600 hover:bg-brand-700 text-white"
+            >
+              <SearchIcon className="w-[18px] h-[18px]" />
+            </button>
           </div>
 
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search gadgets, accessories..."
-            className="flex-1 min-w-0 h-full px-3 text-sm focus:outline-none"
-          />
+          {catOpen && (
+            <div className="absolute left-0 top-full mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white card p-1.5 z-50">
+              <p className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Shop by Category
+              </p>
 
-          <button
-            type="button"
-            onClick={() => cameraInputRef.current?.click()}
-            aria-label="Search by photo"
-            title="Search by photo"
-            className="flex items-center justify-center w-9 shrink-0 text-slate-500 hover:text-brand-700"
-          >
-            <CameraIcon className="w-[18px] h-[18px]" />
-          </button>
+              <button
+                type="button"
+                onClick={() => { setCategory(null); setCatOpen(false) }}
+                className={`w-full text-left px-2.5 py-2 rounded text-sm ${
+                  !category ? 'bg-brand-50 text-brand-700 font-medium' : 'hover:bg-slate-50'
+                }`}
+              >
+                All Categories
+              </button>
 
-          <button
-            type="submit"
-            aria-label="Search"
-            className="flex items-center justify-center w-11 shrink-0 bg-brand-600 hover:bg-brand-700 text-white"
-          >
-            <SearchIcon className="w-[18px] h-[18px]" />
-          </button>
+              {categoriesError && (
+                <div className="px-2.5 py-2 text-sm text-slate-500 flex items-center justify-between gap-2">
+                  <span>Couldn't load categories.</span>
+                  <button type="button" onClick={loadCategories} className="text-brand-700 font-medium shrink-0">
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {!categoriesError && categories.length === 0 && (
+                <div className="px-2.5 py-1.5 space-y-1.5">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-6 rounded bg-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              )}
+
+              {categories.map((c) => (
+                <button
+                  type="button"
+                  key={c.id}
+                  onClick={() => { setCategory(c); setCatOpen(false) }}
+                  className={`block w-full text-left px-2.5 py-2 rounded text-sm truncate ${
+                    category?.id === c.id ? 'bg-brand-50 text-brand-700 font-medium' : 'hover:bg-slate-50'
+                  }`}
+                >
+                  {c.name}
+                </button>
+              ))}
+
+              {/* Explicit "view all categories" entry point — the request
+                  behind the category icon shouldn't just filter search,
+                  it should also let you browse the full category list. */}
+              <Link
+                to="/shop"
+                onClick={() => { setCategory(null); setCatOpen(false) }}
+                className="block px-2.5 py-2 rounded text-sm font-medium text-brand-700 border-t border-slate-100 mt-1 pt-2.5 hover:bg-brand-50"
+              >
+                View All Categories →
+              </Link>
+            </div>
+          )}
         </form>
 
         {/* Shared hidden input for the camera-scan button (desktop + mobile) */}

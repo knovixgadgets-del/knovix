@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import StarRating from './StarRating'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
+import { getDisplayRating } from '../utils/rating'
 
 export default function ProductCard({ product }) {
   const { addItem } = useCart()
   const { toggle, isWishlisted } = useWishlist()
+  const [imgErrored, setImgErrored] = useState(false)
 
   const off = Math.round(((product.mrp - product.price) / product.mrp) * 100)
 
@@ -16,12 +19,19 @@ export default function ProductCard({ product }) {
           to={`/product/${product.id}`}
           className="block aspect-square rounded-lg overflow-hidden bg-slate-50"
         >
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
+          {product.image && !imgErrored ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+              onError={() => setImgErrored(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300 text-xs">
+              No image
+            </div>
+          )}
         </Link>
 
         <button
@@ -39,7 +49,7 @@ export default function ProductCard({ product }) {
         </button>
       </div>
 
-      <StarRating rating={product.rating} reviews={product.reviews} />
+      <StarRating rating={getDisplayRating(product)} reviews={product.reviews} />
 
       <Link
         to={`/product/${product.id}`}

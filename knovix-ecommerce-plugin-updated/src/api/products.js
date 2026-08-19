@@ -25,6 +25,18 @@ function toArray(response) {
 // page to show its own loading/error/empty state, rather than silently
 // showing dummy products in place of real store data.
 
+// Placeholder/seed entries (WooCommerce sample data, "Test Product", etc.)
+// sometimes linger in a store's catalog from setup. Filter them out here so
+// they can't reach the storefront even if they're still present in WP.
+const DUMMY_NAME_PATTERN = /\b(test product|dummy|sample product|lorem ipsum|placeholder)\b/i
+
+function isDummyProduct(p) {
+  if (!p || typeof p !== 'object') return true
+  const name = (p.name || '').trim()
+  if (!name) return true
+  return DUMMY_NAME_PATTERN.test(name)
+}
+
 export async function getCategories() {
   try {
     return toArray(await apiFetch('/categories'))
@@ -47,9 +59,10 @@ export async function getProducts(filters = {}) {
   const qs = new URLSearchParams(cleanFilters).toString()
 
   try {
-    return toArray(await apiFetch(
+    const items = toArray(await apiFetch(
       qs ? `/products?${qs}` : '/products'
     ))
+    return items.filter((p) => !isDummyProduct(p))
   } catch (err) {
     console.error('[knovix] /products failed:', err.message)
     return []
