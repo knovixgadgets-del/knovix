@@ -73,3 +73,13 @@ h1,h2,h3,h4 { @apply font-display; }
   .hero-in, .hero-blob, .hero-pulse-ring { animation: none; }
 }
 
+/* Mobile menu bottom sheet */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+

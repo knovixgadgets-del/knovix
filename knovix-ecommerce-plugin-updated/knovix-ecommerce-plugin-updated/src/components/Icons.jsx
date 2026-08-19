@@ -79,6 +79,30 @@ export function SearchIcon({ className = 'w-5 h-5' }) {
   )
 }
 
+export function ChevronDownIcon({ className = 'w-4 h-4' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
+
+export function CloseIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  )
+}
+
+export function ChevronRightIcon({ className = 'w-4 h-4' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  )
+}
+
 export function HeartIcon({ className = 'w-5 h-5', filled = false }) {
   return (
     <svg

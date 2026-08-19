@@ -13,7 +13,7 @@ export default function BottomNav({ menuOpen, setMenuOpen }) {
   const { user } = useAuth()
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 flex items-stretch pb-[env(safe-area-inset-bottom)]">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 flex items-stretch pb-[env(safe-area-inset-bottom)]">
       <NavLink to="/" end className={tabClass}>
         <HomeIcon className="w-5 h-5" />
         Home
