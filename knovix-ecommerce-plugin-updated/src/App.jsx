@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import StoreLayout from './layouts/StoreLayout'
 import AdminLayout from './layouts/AdminLayout'
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute'
@@ -24,6 +24,18 @@ import ProductForm from './pages/admin/ProductForm'
 import OrdersList from './pages/admin/OrdersList'
 import OrderDetail from './pages/admin/OrderDetail'
 
+// /category/mobile-accessories, /category/audio etc. are the descriptive,
+// crawlable URLs referenced in category links across the site (and in the
+// homepage's SEO fallback markup). Shop itself is filtered via the
+// ?category= query param, so this just resolves the pretty URL to it.
+// TODO: once category landing pages have their own copy/meta, replace this
+// redirect with a real <CategoryPage> route so each category gets its own
+// indexable, non-redirected URL.
+function CategoryRedirect() {
+  const { slug } = useParams()
+  return <Navigate to={`/shop?category=${slug}`} replace />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -48,6 +60,11 @@ export default function App() {
 
         <Route path="/contact" element={<Contact />} />
         <Route path="/blog" element={<Blog />} />
+        <Route path="/category/:slug" element={<CategoryRedirect />} />
+        {/* Alias for the "About Knovix" brand page — points at the same
+            /about content rather than a duplicate page, to avoid splitting
+            SEO value across two near-identical URLs. */}
+        <Route path="/about-knovix" element={<Navigate to="/about" replace />} />
 
         {['about', 'careers', 'brands', 'faq', 'returns', 'shipping', 'privacy', 'terms'].map((slug) => (
           <Route
@@ -55,6 +72,7 @@ export default function App() {
             path={`/${slug}`}
             element={
               <StaticPage
+                slug={slug}
                 title={slug.replace(/^\w/, (c) => c.toUpperCase())}
               />
             }

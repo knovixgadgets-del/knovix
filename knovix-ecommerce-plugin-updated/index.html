@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Knovix Gadgets — Smart Gadgets. Smarter Living.</title>
-    <meta name="description" content="Knovix Gadgets — premium smart gadgets, earbuds, smartwatches, chargers and accessories. Free shipping across India, 7-day easy replacement, 100% secure payments." />
+    <title>Knovix | Smart Gadgets, Accessories & Everyday Tech</title>
+    <meta name="description" content="Shop smart gadgets, mobile accessories, electronics, toys and everyday tech at Knovix. Discover quality products, mega deals and fast delivery across India." />
     <link rel="canonical" href="https://knovixgadgets.in/" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Knovix Gadgets" />
-    <meta property="og:title" content="Knovix Gadgets — Smart Gadgets. Smarter Living." />
-    <meta property="og:description" content="Premium gadgets and accessories to upgrade your lifestyle with the best technology." />
+    <meta property="og:site_name" content="Knovix" />
+    <meta property="og:title" content="Knovix | Smart Gadgets, Accessories & Everyday Tech" />
+    <meta property="og:description" content="Shop smart gadgets, mobile accessories, electronics, toys and everyday tech at Knovix. Discover quality products, mega deals and fast delivery across India." />
     <meta property="og:url" content="https://knovixgadgets.in/" />
     <meta property="og:image" content="https://knovixgadgets.in/brand/knovix-logo.png" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -18,9 +18,60 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/brand/favicon-180.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- SEO: WebSite structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Knovix",
+      "alternateName": "Knovix Gadgets",
+      "url": "https://knovixgadgets.in/"
+    }
+    </script>
+
+    <!-- SEO: Organization structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Knovix",
+      "alternateName": "Knovix Gadgets",
+      "url": "https://knovixgadgets.in/",
+      "logo": "https://knovixgadgets.in/brand/knovix-logo.png"
+    }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!--
+        SEO fallback content: real, crawlable HTML that's visible before
+        React hydrates (and to any crawler that doesn't execute JS). React
+        replaces this with the live homepage on mount, so it never causes a
+        visual flash of duplicate content for real visitors — see index.css
+        for the one-time swap rule if you add more fallback blocks.
+      -->
+      <header>
+        <a href="/">Knovix</a>
+      </header>
+      <main>
+        <h1>Knovix – Smart Gadgets. Smarter Living.</h1>
+        <p>
+          Discover smart gadgets, mobile accessories, electronics, toys and
+          everyday technology at Knovix Gadgets. Shop premium earbuds,
+          smartwatches, chargers and accessories with free shipping across
+          India, 7-day easy replacement and 100% secure payments.
+        </p>
+        <nav aria-label="Shop categories">
+          <a href="/shop">Shop Gadgets</a>
+          <a href="/category/mobile-accessories">Mobile Accessories</a>
+          <a href="/category/audio">Audio</a>
+          <a href="/category/bike-accessories">Bike Accessories</a>
+          <a href="/category/car-accessories">Car Accessories</a>
+          <a href="/about-knovix">About Knovix</a>
+        </nav>
+      </main>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

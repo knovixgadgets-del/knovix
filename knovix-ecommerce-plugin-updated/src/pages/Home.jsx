@@ -131,6 +131,19 @@ export default function Home() {
 
   return (
     <div>
+      {/* Real, crawlable heading — the hero carousel below is decorative and
+          only ever renders an <h2>, so the page previously shipped with no
+          <h1> at all. Kept compact since the hero carries the visual weight. */}
+      <section className="container-px max-w-7xl mx-auto pt-4">
+        <h1 className="text-lg sm:text-xl font-bold font-display">
+          Knovix – Smart Gadgets. Smarter Living.
+        </h1>
+        <p className="text-sm text-slate-500 mt-1 max-w-2xl">
+          Discover smart gadgets, mobile accessories, electronics, toys and
+          everyday technology at Knovix Gadgets.
+        </p>
+      </section>
+
       <HeroCarousel slides={heroSlides} />
 
       <section className="container-px max-w-7xl mx-auto py-4 grid grid-cols-2 md:grid-cols-4 gap-2.5">
