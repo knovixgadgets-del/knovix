@@ -39,6 +39,14 @@ async function fetchOnce(url, options) {
     if (err.name === 'AbortError') {
       throw new Error('Request timed out. Please check your connection and try again.');
     }
+    // The browser throws a bare "Failed to fetch" (or "NetworkError...")
+    // when the request never got a response at all — server unreachable,
+    // DNS/SSL problem, or blocked by CORS. That raw string means nothing
+    // to a shopper, so replace it with something actionable instead of
+    // letting it leak into the UI as-is.
+    if (err instanceof TypeError) {
+      throw new Error("Can't reach the server right now. Please check your connection and try again in a moment.");
+    }
     throw err;
   } finally {
     clearTimeout(timer);

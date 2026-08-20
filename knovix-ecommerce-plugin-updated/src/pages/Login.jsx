@@ -215,9 +215,16 @@ export default function Login() {
         <button
           type="button"
           onClick={() => setShowPasswordForm((v) => !v)}
-          className="text-xs text-slate-400 hover:text-slate-600 w-full text-center"
+          className="text-sm w-full text-center"
         >
-          {showPasswordForm ? 'Hide' : 'Admin or existing account? Login with email & password'}
+          {showPasswordForm ? (
+            <span className="text-ink-900 font-medium hover:text-brand-700">Hide</span>
+          ) : (
+            <span className="text-ink-900">
+              Already have an account?{' '}
+              <span className="text-brand-700 font-semibold hover:text-brand-800">Login</span>
+            </span>
+          )}
         </button>
 
         {showPasswordForm && (
