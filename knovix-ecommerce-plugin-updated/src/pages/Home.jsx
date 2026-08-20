@@ -13,12 +13,6 @@ const perks = [
   ['💬', '24/7 Customer Support', "We're here to help anytime, anywhere"]
 ]
 
-const heroGradients = [
-  'from-brand-700 to-brand-900',
-  'from-ink-900 to-brand-800',
-  'from-teal-700 to-brand-900'
-]
-
 function useCountdown(hours = 51) {
   const [target] = useState(() => Date.now() + hours * 3600 * 1000)
   const [left, setLeft] = useState(target - Date.now())
@@ -129,7 +123,6 @@ export default function Home() {
     id: p.id,
     href: `/product/${p.id}`,
     image: p.image,
-    gradient: heroGradients[i % heroGradients.length],
     eyebrow: i === 0 ? 'NEW ARRIVALS' : 'FEATURED',
     title: i === 0 ? 'New Arrivals. Winter Sale.' : p.name,
     subtitle: i === 0 ? 'Premium gadgets and accessories to upgrade your lifestyle.' : p.description,

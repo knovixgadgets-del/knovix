@@ -15,6 +15,8 @@ import Signup from './pages/Signup'
 import Account from './pages/Account'
 import NotFound from './pages/NotFound'
 import StaticPage from './pages/StaticPage'
+import Contact from './pages/Contact'
+import Blog from './pages/Blog'
 
 import Dashboard from './pages/admin/Dashboard'
 import ProductsList from './pages/admin/ProductsList'
@@ -44,7 +46,10 @@ export default function App() {
           }
         />
 
-        {['about', 'careers', 'blog', 'brands', 'contact', 'faq', 'returns', 'shipping', 'privacy', 'terms'].map((slug) => (
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/blog" element={<Blog />} />
+
+        {['about', 'careers', 'brands', 'faq', 'returns', 'shipping', 'privacy', 'terms'].map((slug) => (
           <Route
             key={slug}
             path={`/${slug}`}

@@ -1,9 +1,16 @@
 import { Link } from 'react-router-dom'
+import { FacebookIcon, InstagramIcon, WhatsappIcon } from './Icons'
 
 const cols = [
-  { title: 'Company', links: [['About Us', '/about'], ['Careers', '/careers'], ['Blog', '/blog'], ['Contact Us', '/contact']] },
+  { title: 'Company', links: [['About Us', '/about'], ['Careers', '/careers'], ['Blog', '/blog'], ['Media Kit', '/about'], ['Contact Us', '/contact']] },
   { title: 'Customer Service', links: [['FAQs', '/faq'], ['Order Tracking', '/account'], ['Returns & Refunds', '/returns'], ['Shipping Policy', '/shipping']] },
   { title: 'Legal', links: [['Privacy Policy', '/privacy'], ['Terms & Conditions', '/terms'], ['Refund Policy', '/returns']] }
+]
+
+const socials = [
+  { icon: FacebookIcon, label: 'Facebook', href: 'https://facebook.com' },
+  { icon: InstagramIcon, label: 'Instagram', href: 'https://instagram.com' },
+  { icon: WhatsappIcon, label: 'WhatsApp', href: 'https://wa.me/919876543210' }
 ]
 
 export default function Footer() {
@@ -15,6 +22,20 @@ export default function Footer() {
           <p className="mt-3 text-slate-400 text-xs leading-relaxed">
             Your one-stop destination for premium gadgets and accessories. Quality, trust and satisfaction guaranteed.
           </p>
+          <div className="flex items-center gap-3 mt-4">
+            {socials.map(({ icon: Icon, label, href }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+              >
+                <Icon className="w-4 h-4" />
+              </a>
+            ))}
+          </div>
         </div>
         {cols.map((col) => (
           <div key={col.title}>
@@ -28,8 +49,9 @@ export default function Footer() {
         ))}
         <div>
           <h4 className="text-white font-semibold mb-3">We Accept</h4>
-          <div className="flex gap-2 text-xs">
+          <div className="flex flex-wrap gap-2 text-xs">
             <span className="bg-white text-ink-900 rounded px-2 py-1">VISA</span>
+            <span className="bg-white text-ink-900 rounded px-2 py-1">Mastercard</span>
             <span className="bg-white text-ink-900 rounded px-2 py-1">UPI</span>
             <span className="bg-white text-ink-900 rounded px-2 py-1">Paytm</span>
           </div>

@@ -130,7 +130,12 @@ add_filter('wc_order_statuses', function ($statuses) {
 |     'http://localhost:5173'
 | );
 |
-| For production change it to your real React domain.
+| For production, set this to the permanent frontend domain:
+|
+| define(
+|     'KNOVIX_FRONTEND_ORIGIN',
+|     'https://knovixgadgets.in'
+| );
 |
 |--------------------------------------------------------------------------
 */

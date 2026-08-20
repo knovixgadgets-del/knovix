@@ -127,7 +127,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
           onSubmit={onSearch}
           className="relative flex-1 min-w-0 sm:max-w-xl"
         >
-          <div className="flex items-stretch h-10 rounded-md border border-slate-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-brand-400 focus-within:border-brand-400">
+          <div className="flex items-stretch h-10 rounded-[4px] border border-slate-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-brand-400 focus-within:border-brand-400 shadow-sm">
             <div className="shrink-0" ref={catRef}>
               <button
                 type="button"
