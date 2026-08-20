@@ -27,6 +27,7 @@ define('KNOVIX_API_NS', 'knovix/v1');
 
 require_once __DIR__ . '/includes/helpers.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/otp-auth.php';
 require_once __DIR__ . '/includes/products.php';
 require_once __DIR__ . '/includes/orders.php';
 
@@ -60,6 +61,8 @@ add_filter(
 add_action('rest_api_init', function () {
 
     knovix_register_auth_routes();
+
+    knovix_register_otp_routes();
 
     knovix_register_product_routes();
 

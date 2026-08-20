@@ -24,13 +24,21 @@ export function AuthProvider({ children }) {
     setUser(u)
     return u
   }
+  async function requestOtp(phone) {
+    return authApi.requestOtp(phone)
+  }
+  async function verifyOtp(phone, otp, name) {
+    const u = await authApi.verifyOtp(phone, otp, name)
+    setUser(u)
+    return u
+  }
   async function logout() {
     await authApi.logout()
     setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, isAdmin: user?.role === 'admin' }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, requestOtp, verifyOtp, logout, isAdmin: user?.role === 'admin' }}>
       {children}
     </AuthContext.Provider>
   )

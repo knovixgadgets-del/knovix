@@ -43,10 +43,12 @@ function knovix_authenticate_bearer_token($user_id) {
 }
 
 function knovix_current_user_response($user) {
+    $phone = get_user_meta($user->ID, '_knovix_phone', true);
     return [
         'id'    => (string) $user->ID,
         'name'  => $user->display_name,
         'email' => $user->user_email,
+        'phone' => $phone ?: null,
         'role'  => in_array('administrator', $user->roles) || in_array('shop_manager', $user->roles) ? 'admin' : 'customer'
     ];
 }
