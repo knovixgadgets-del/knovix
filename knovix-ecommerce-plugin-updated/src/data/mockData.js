@@ -31,9 +31,9 @@ export const products = [
 ]
 
 export const testimonials = [
-  { name: 'Anand Krishna', text: 'Excellent quality products and super fast delivery. Highly recommended!', rating: 5 },
-  { name: 'Navya KS', text: 'Knovix Gadgets never disappoints. Best place for all tech accessories.', rating: 5 },
-  { name: 'Gokul T V', text: 'Good product, affordable price and great customer support.', rating: 5 }
+  { name: 'Rohit Sharma', text: 'Excellent quality products and super fast delivery. Highly recommended!', rating: 5 },
+  { name: 'Priya Nair', text: 'Knovix Gadgets never disappoints. Best place for all tech accessories.', rating: 5 },
+  { name: 'Arjun Mehta', text: 'Good product, affordable price and great customer support.', rating: 5 }
 ]
 
 export const demoUsers = [
