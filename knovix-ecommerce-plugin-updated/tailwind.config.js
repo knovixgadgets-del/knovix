@@ -5,20 +5,20 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f2f8fa',
-          100: '#e1f0f4',
-          200: '#c0dfe7',
-          300: '#8dc8d8',
-          400: '#52aec7',
-          500: '#328ca4',
-          600: '#247085', // primary peacock (logo, buttons, links, prices)
-          700: '#1b596a',
-          800: '#154451',
-          900: '#10333c'
+          50: '#fffbea',
+          100: '#fff3c4',
+          200: '#fce588',
+          300: '#fad855',
+          400: '#f8cd2e',
+          500: '#f6c20d',
+          600: '#eab308', // primary gold-yellow (logo, buttons, links, prices)
+          700: '#b58a04',
+          800: '#8a6a05',
+          900: '#5c4703'
         },
         ink: {
-          900: '#0f2530', // deep peacock-navy for footer / darkest UI
-          800: '#1e3a47'  // heading text, tuned to sit with the peacock palette
+          900: '#0d0d0d', // near-black for footer / darkest UI
+          800: '#1a1a1a'  // heading text, tuned to sit with the black/yellow palette
         },
         amber: {
           400: '#fab816' // star rating gold

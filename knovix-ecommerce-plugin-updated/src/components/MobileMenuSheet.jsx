@@ -133,7 +133,7 @@ export default function MobileMenuSheet({ menuOpen, setMenuOpen }) {
               <CartIcon className="w-4.5 h-4.5 text-slate-400" /> Cart
             </span>
             {count > 0 && (
-              <span className="bg-brand-600 text-white text-xs rounded-full px-2 py-0.5">
+              <span className="bg-brand-600 text-ink-900 text-xs rounded-full px-2 py-0.5">
                 {count}
               </span>
             )}

@@ -205,15 +205,15 @@ export default function Home() {
       </section>
 
       <section className="container-px max-w-7xl mx-auto">
-        <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-brand-500 to-brand-600 text-ink-900 rounded-xl p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold flex items-center gap-1">⚡ FLASH SALE</p>
             <h3 className="text-xl sm:text-2xl font-bold mt-1">Mega Deals on Top Gadgets!</h3>
-            <p className="text-sm text-brand-100">Limited time offers. Grab before it's gone.</p>
+            <p className="text-sm text-ink-800">Limited time offers. Grab before it's gone.</p>
           </div>
           <div className="flex gap-2 sm:gap-3 text-center">
             {[['Days', d], ['Hours', h], ['Minutes', m], ['Seconds', s]].map(([label, val]) => (
-              <div key={label} className="bg-black/30 rounded-lg px-2.5 sm:px-3 py-2 min-w-[52px] sm:min-w-[60px]">
+              <div key={label} className="bg-black text-white rounded-lg px-2.5 sm:px-3 py-2 min-w-[52px] sm:min-w-[60px]">
                 <p className="text-lg sm:text-xl font-bold">{String(val).padStart(2, '0')}</p>
                 <p className="text-[10px] uppercase">{label}</p>
               </div>
