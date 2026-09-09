@@ -84,10 +84,10 @@ export default function Header({ menuOpen, setMenuOpen }) {
       {/* Promo bar — scrolling messages only; Deals/New Arrivals/Brands
           live in one place per breakpoint (see quickLinks) so they don't
           repeat here too. */}
-      <div className="bg-brand-600 text-ink-900 text-xs overflow-hidden">
+      <div className="bg-ink-900 text-white text-xs overflow-hidden">
         <div className="container-px max-w-7xl mx-auto flex items-center py-1.5">
           <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="marquee-track flex items-center gap-10 whitespace-nowrap w-max font-medium">
+            <div className="marquee-track flex items-center gap-10 whitespace-nowrap w-max">
               {[...promoMessages, ...promoMessages].map((msg, i) => (
                 <span key={i}>{msg}</span>
               ))}
@@ -164,7 +164,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
             <button
               type="submit"
               aria-label="Search"
-              className="flex items-center justify-center w-11 shrink-0 bg-brand-600 hover:bg-brand-500 text-ink-900"
+              className="flex items-center justify-center w-11 shrink-0 bg-brand-600 hover:bg-brand-700 text-white"
             >
               <SearchIcon className="w-[18px] h-[18px]" />
             </button>
@@ -252,7 +252,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
             <span className="relative">
               <HeartIcon className="w-5 h-5" />
               {wishCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-brand-600 text-ink-900 text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-brand-600 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
                   {wishCount}
                 </span>
               )}
@@ -340,7 +340,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
             </span>
 
             {count > 0 && (
-              <span className="absolute -top-1 -right-2 bg-brand-600 text-ink-900 text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -top-1 -right-2 bg-brand-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
                 {count}
               </span>
             )}
@@ -368,8 +368,8 @@ export default function Header({ menuOpen, setMenuOpen }) {
       </div>
 
       {/* Desktop navigation */}
-      <nav className="hidden lg:block bg-ink-900">
-        <div className="container-px max-w-7xl mx-auto flex items-center gap-6 py-2.5 text-sm font-medium">
+      <nav className="hidden lg:block border-t border-slate-100">
+        <div className="container-px max-w-7xl mx-auto flex items-center gap-6 py-2 text-sm font-medium">
 
           {navLinks.map((l) => (
             <NavLink
@@ -377,8 +377,8 @@ export default function Header({ menuOpen, setMenuOpen }) {
               to={l.to}
               className={({ isActive }) =>
                 isActive
-                  ? 'text-brand-500'
-                  : 'text-white hover:text-brand-500'
+                  ? 'text-brand-700'
+                  : 'text-slate-700 hover:text-brand-700'
               }
               end={l.to === '/'}
             >

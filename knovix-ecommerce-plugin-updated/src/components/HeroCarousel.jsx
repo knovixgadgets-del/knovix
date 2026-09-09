@@ -85,7 +85,7 @@ export default function HeroCarousel({ slides = [] }) {
                   <div className="flex items-center gap-2.5 mt-3 sm:mt-5">
                     <Link
                       to={slide.href}
-                      className="inline-flex items-center gap-1 bg-brand-600 text-ink-900 text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-1.5 sm:py-2.5 rounded-md hover:bg-brand-500 transition-colors"
+                      className="inline-flex items-center gap-1 bg-brand-600 text-white text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-1.5 sm:py-2.5 rounded-md hover:bg-brand-700 transition-colors"
                     >
                       {slide.cta}
                       <ChevronRightIcon className="w-3.5 h-3.5" />

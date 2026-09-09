@@ -57,7 +57,7 @@ export default function OrderDetail() {
             <button
               key={s}
               onClick={() => handleStatus(s)}
-              className={`text-xs font-medium rounded-full px-3 py-1.5 capitalize border ${order.status === s ? 'bg-brand-600 text-ink-900 border-brand-600' : 'border-slate-300 text-slate-600'}`}
+              className={`text-xs font-medium rounded-full px-3 py-1.5 capitalize border ${order.status === s ? 'bg-brand-600 text-white border-brand-600' : 'border-slate-300 text-slate-600'}`}
             >
               {s}
             </button>

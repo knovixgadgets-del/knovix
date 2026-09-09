@@ -33,7 +33,7 @@ export default function BottomNav({ menuOpen, setMenuOpen }) {
         <span className="relative">
           <CartIcon className="w-5 h-5" />
           {count > 0 && (
-            <span className="absolute -top-1.5 -right-2.5 bg-brand-600 text-ink-900 text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-2.5 bg-brand-600 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
               {count}
             </span>
           )}

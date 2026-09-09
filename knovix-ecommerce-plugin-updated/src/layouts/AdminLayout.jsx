@@ -19,7 +19,7 @@ export default function AdminLayout() {
               key={l.to}
               to={l.to}
               end={l.end}
-              className={({ isActive }) => `block px-3 py-2 rounded-md text-sm ${isActive ? 'bg-brand-600 text-ink-900' : 'text-slate-300 hover:bg-white/10'}`}
+              className={({ isActive }) => `block px-3 py-2 rounded-md text-sm ${isActive ? 'bg-brand-600 text-white' : 'text-slate-300 hover:bg-white/10'}`}
             >
               {l.label}
             </NavLink>
