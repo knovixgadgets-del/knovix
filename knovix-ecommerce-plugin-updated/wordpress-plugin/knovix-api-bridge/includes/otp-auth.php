@@ -70,8 +70,21 @@ function knovix_send_otp_sms($phone, $otp) {
     $code = wp_remote_retrieve_response_code($response);
     $body = json_decode(wp_remote_retrieve_body($response), true);
 
+    // Fast2SMS's error shape is inconsistent — sometimes `message` is a
+    // plain string (e.g. auth failures: "Invalid Authentication, Check
+    // Authorization Key"), sometimes an array of strings (e.g. validation
+    // errors). Blindly reading [0] silently truncated a string message to
+    // its first character instead of showing it — handle both shapes.
+    $fast2sms_message = $body['message'] ?? null;
+    if (is_array($fast2sms_message)) {
+        $fast2sms_message = $fast2sms_message[0] ?? null;
+    }
+    if (!$fast2sms_message || !is_string($fast2sms_message)) {
+        $fast2sms_message = 'Failed to send OTP SMS.';
+    }
+
     if ($code >= 300 || empty($body['return'])) {
-        return knovix_error($body['message'][0] ?? 'Failed to send OTP SMS.', 502);
+        return knovix_error($fast2sms_message, 502);
     }
 
     return true;
