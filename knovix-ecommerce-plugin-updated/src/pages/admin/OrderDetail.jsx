@@ -12,10 +12,6 @@ export default function OrderDetail() {
 
   useEffect(() => { getOrder(id).then(setOrder).catch(() => setError(true)) }, [id])
 
-
-  useEffect(() => { getOrder(id).then(setOrder) }, [id])
-
-
   async function handleStatus(status) {
     const updated = await updateOrderStatus(id, status)
     setOrder(updated)

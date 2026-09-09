@@ -1,4 +1,23 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
+
+// Dummy thumbnail — falls back to the gradient block if the placeholder
+// service is unreachable, so a post card never shows a broken-image icon.
+function PostThumb({ src, gradient, className }) {
+  const [errored, setErrored] = useState(false)
+  if (!src || errored) {
+    return <div className={`bg-gradient-to-br ${gradient} ${className}`} />
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      onError={() => setErrored(true)}
+      className={`object-cover ${className}`}
+    />
+  )
+}
 
 // Dummy editorial content — swap for real posts pulled from WordPress
 // (the WP backend already has a native posts API) once copy is ready.
@@ -10,7 +29,8 @@ const posts = [
     excerpt: 'Battery life, ANC, and fit beat spec-sheet numbers every time. Here is what to check before you buy your next pair of earbuds.',
     date: 'Aug 12, 2026',
     readMins: 5,
-    gradient: 'from-brand-100 to-teal-100'
+    gradient: 'from-brand-100 to-teal-100',
+    image: 'https://picsum.photos/seed/knovix-earbuds/800/600'
   },
   {
     id: 2,
@@ -19,7 +39,8 @@ const posts = [
     excerpt: 'Why a tiny 65W GaN charger can power your laptop and phone at once, and how to pick the right wattage for your gadgets.',
     date: 'Aug 5, 2026',
     readMins: 4,
-    gradient: 'from-teal-100 to-brand-50'
+    gradient: 'from-teal-100 to-brand-50',
+    image: 'https://picsum.photos/seed/knovix-charger/800/600'
   },
   {
     id: 3,
@@ -28,7 +49,8 @@ const posts = [
     excerpt: 'A 20,000mAh power bank does not always charge faster. We break down capacity vs output so you stop overpaying.',
     date: 'Jul 28, 2026',
     readMins: 6,
-    gradient: 'from-brand-50 to-brand-100'
+    gradient: 'from-brand-50 to-brand-100',
+    image: 'https://picsum.photos/seed/knovix-powerbank/800/600'
   },
   {
     id: 4,
@@ -37,7 +59,8 @@ const posts = [
     excerpt: 'Small settings tweaks that add hours back to your smartwatch without switching off the features you actually use.',
     date: 'Jul 19, 2026',
     readMins: 3,
-    gradient: 'from-teal-50 to-brand-100'
+    gradient: 'from-teal-50 to-brand-100',
+    image: 'https://picsum.photos/seed/knovix-smartwatch/800/600'
   },
   {
     id: 5,
@@ -46,7 +69,8 @@ const posts = [
     excerpt: 'A look at the design decisions behind our best-selling smartwatch — from the AMOLED display to a week-long battery.',
     date: 'Jul 9, 2026',
     readMins: 4,
-    gradient: 'from-brand-100 to-teal-50'
+    gradient: 'from-brand-100 to-teal-50',
+    image: 'https://picsum.photos/seed/knovix-visionmax/800/600'
   },
   {
     id: 6,
@@ -55,7 +79,8 @@ const posts = [
     excerpt: 'Road trips, daily commutes, and emergencies each call for a different backup. Here is how to decide.',
     date: 'Jun 30, 2026',
     readMins: 4,
-    gradient: 'from-teal-100 to-brand-100'
+    gradient: 'from-teal-100 to-brand-100',
+    image: 'https://picsum.photos/seed/knovix-carcharger/800/600'
   }
 ]
 
@@ -73,7 +98,7 @@ export default function Blog() {
 
       {/* Featured post */}
       <Link to="#" className="card overflow-hidden mt-8 grid sm:grid-cols-2 group">
-        <div className={`h-48 sm:h-full bg-gradient-to-br ${featured.gradient}`} />
+        <PostThumb src={featured.image} gradient={featured.gradient} className="h-48 sm:h-full w-full" />
         <div className="p-5 sm:p-6 flex flex-col justify-center">
           <span className="inline-block w-fit bg-brand-50 text-brand-700 text-[11px] font-semibold px-2.5 py-1 rounded-full">
             {featured.category}
@@ -90,7 +115,7 @@ export default function Blog() {
       <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {rest.map((post) => (
           <Link key={post.id} to="#" className="card overflow-hidden group">
-            <div className={`h-36 bg-gradient-to-br ${post.gradient}`} />
+            <PostThumb src={post.image} gradient={post.gradient} className="h-36 w-full" />
             <div className="p-4">
               <span className="inline-block bg-brand-50 text-brand-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">
                 {post.category}

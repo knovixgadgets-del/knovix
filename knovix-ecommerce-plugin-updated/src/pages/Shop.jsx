@@ -177,33 +177,42 @@ export default function Shop() {
 
           </h1>
 
-          {/* Sort */}
-          <select
-            value={sort}
-            onChange={(e) => setParam('sort', e.target.value)}
-            className="input w-auto"
-          >
-            <option value="">
-              Sort: Featured
-            </option>
+          {/* Sort — order and labels match Amazon's "Sort by" dropdown:
+              Featured, then the two price directions, then rating and
+              newest, with the label sitting outside the control instead
+              of being baked into the first option's text. */}
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline text-sm text-slate-500 shrink-0">
+              Sort by:
+            </span>
 
-            <option value="newest">
-              Newest First
-            </option>
+            <select
+              value={sort}
+              onChange={(e) => setParam('sort', e.target.value)}
+              className="input w-auto"
+            >
+              <option value="">
+                Featured
+              </option>
 
-            <option value="price_asc">
-              Price: Low to High
-            </option>
+              <option value="price_asc">
+                Price: Low to High
+              </option>
 
-            <option value="price_desc">
-              Price: High to Low
-            </option>
+              <option value="price_desc">
+                Price: High to Low
+              </option>
 
-            <option value="rating">
-              Top Rated
-            </option>
+              <option value="rating">
+                Avg. Customer Review
+              </option>
 
-          </select>
+              <option value="newest">
+                Newest Arrivals
+              </option>
+
+            </select>
+          </div>
 
         </div>
 
