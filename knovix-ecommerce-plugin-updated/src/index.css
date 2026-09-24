@@ -83,3 +83,7 @@ h1,h2,h3,h4 { @apply font-display; }
   to { transform: translateY(0); }
 }
 
+
+/* Hide scrollbar on horizontally scrolling strips (category tabs) */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

@@ -26,7 +26,7 @@ export async function requestOtp(phone) {
     return apiFetch('/auth/otp/request', { method: 'POST', body: JSON.stringify({ phone }) })
   }
   // Local/demo fallback — no SMS provider wired up outside WordPress mode.
-  return { success: true, expiresIn: 300, resendIn: 45 }
+  return { success: true, otpLength: 4, expiresIn: 300, resendIn: 45 }
 }
 
 export async function verifyOtp(phone, otp, name) {

@@ -20,10 +20,12 @@ WooCommerce's PHP functions directly.
    ```php
    define('KNOVIX_FRONTEND_ORIGIN', 'https://yourfrontend.com');
    ```
-4. For phone/OTP login, sign up at https://www.fast2sms.com, grab your API
-   key from the Dev API dashboard, and add it to `wp-config.php`:
+4. For phone/OTP login, get your API key from https://renflair.in and add
+   it to `wp-config.php`:
    ```php
-   define('KNOVIX_FAST2SMS_API_KEY', 'your-fast2sms-api-key');
+   define('KNOVIX_RENFLAIR_API_KEY', 'your-renflair-api-key');
+   // optional: OTP length, 4-8 digits (default 4)
+   // define('KNOVIX_OTP_LENGTH', 4);
    ```
    Without this key, `/auth/otp/request` returns a 500 telling the
    frontend SMS isn't configured yet — everything else keeps working.
@@ -36,7 +38,7 @@ WooCommerce's PHP functions directly.
 | `GET /products/:id` | |
 | `POST /products` · `PATCH /products/:id` · `DELETE /products/:id` | admin only (`manage_woocommerce`) |
 | `POST /auth/signup`, `/auth/login`, `/auth/logout`, `GET /auth/session` | issues a bearer token stored in WP user meta, no separate JWT plugin needed |
-| `POST /auth/otp/request` | body `{ phone }` — sends a 6-digit OTP via Fast2SMS, 45s resend cooldown |
+| `POST /auth/otp/request` | body `{ phone }` — sends an OTP (4 digits by default) via the Renflair SMS API, 45s resend cooldown; response includes `otpLength` |
 | `POST /auth/otp/verify` | body `{ phone, otp, name? }` — first successful verify for a number creates the account; returns the same `{ token, ... }` shape as `/auth/login` |
 | `POST /orders` | creates a real WooCommerce order; works for guests or logged-in customers |
 | `GET /orders`, `GET /orders/:id` | customers see only their own orders; admins see all |

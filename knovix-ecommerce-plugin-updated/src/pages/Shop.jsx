@@ -2,6 +2,46 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { getCategories, getProducts } from '../api/products'
+import {
+  BoltIcon,
+  BottleIcon,
+  CategoryIcon,
+  HangerIcon,
+  HeadphonesIcon,
+  HeartPulseIcon,
+  ShopIcon,
+  TagIcon
+} from '../components/Icons'
+
+// Picks a tab icon from the category name so tabs look like the app UI
+// (Beauty → bottle, Fashion → hanger, Health → heart-pulse …).
+function iconForCategory(name = '') {
+  const n = name.toLowerCase()
+  if (/beauty|care|groom|skin|cosmetic/.test(n)) return BottleIcon
+  if (/fashion|cloth|wear|apparel|watch/.test(n)) return HangerIcon
+  if (/health|fitness|wellness/.test(n)) return HeartPulseIcon
+  if (/audio|head|ear|speaker|sound|music/.test(n)) return HeadphonesIcon
+  if (/home|kitchen|living|appliance/.test(n)) return ShopIcon
+  return TagIcon
+}
+
+function CategoryTab({ active, onClick, icon: Icon, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative shrink-0 flex flex-col items-center gap-1 px-4 pt-3 pb-2.5 text-[15px] transition-colors ${
+        active ? 'text-ink-900 font-semibold' : 'text-slate-500'
+      }`}
+    >
+      <Icon className="w-6 h-6" />
+      <span className="whitespace-nowrap">{label}</span>
+      {active && (
+        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] w-12 rounded-full bg-orange-500" />
+      )}
+    </button>
+  )
+}
 
 export default function Shop() {
   const [params, setParams] = useSearchParams()
@@ -92,13 +132,54 @@ export default function Shop() {
   )?.name
 
   return (
-    <div className="container-px max-w-7xl mx-auto py-8 grid md:grid-cols-[220px_1fr] gap-8">
+    <div className="bg-[#f6f4fb] min-h-[60vh]">
+
+      {/* Category tab strip — icon + label tabs with an underline on the
+          active one (Deals, All, then each store category). Desktop keeps
+          the sidebar category list below instead. */}
+      <div className="md:hidden bg-white border-b border-slate-100 shadow-sm">
+        <div className="flex overflow-x-auto no-scrollbar px-1">
+          <CategoryTab
+            icon={BoltIcon}
+            label="Deals"
+            active={sort === 'price_asc' && !category}
+            onClick={() => {
+              const next = new URLSearchParams(params)
+              next.delete('category')
+              next.set('sort', 'price_asc')
+              setParams(next)
+            }}
+          />
+          <CategoryTab
+            icon={CategoryIcon}
+            label="All"
+            active={!category && sort !== 'price_asc'}
+            onClick={() => {
+              const next = new URLSearchParams(params)
+              next.delete('category')
+              if (sort === 'price_asc') next.delete('sort')
+              setParams(next)
+            }}
+          />
+          {categories.map((c) => (
+            <CategoryTab
+              key={c.id}
+              icon={iconForCategory(c.name)}
+              label={c.name}
+              active={String(category) === String(c.id)}
+              onClick={() => setParam('category', String(c.id))}
+            />
+          ))}
+        </div>
+      </div>
+
+    <div className="container-px max-w-7xl mx-auto py-4 md:py-8 grid md:grid-cols-[220px_1fr] gap-4 md:gap-8">
 
       {/* Sidebar */}
       <aside className="space-y-6">
 
-        {/* Category */}
-        <div>
+        {/* Category (desktop — mobile uses the tab strip above) */}
+        <div className="hidden md:block">
           <h3 className="font-semibold mb-2 text-sm">
             Category
           </h3>
@@ -268,7 +349,7 @@ export default function Shop() {
         ) : (
 
           /* Product Grid */
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4">
 
             {filtered.map((p) => (
               <ProductCard
@@ -283,6 +364,7 @@ export default function Shop() {
 
       </div>
 
+    </div>
     </div>
   )
 }

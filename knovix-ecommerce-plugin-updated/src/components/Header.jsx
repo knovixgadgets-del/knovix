@@ -106,9 +106,9 @@ export default function Header({ menuOpen, setMenuOpen }) {
           aria-label="Knovix — home"
         >
           <img
-            src="/brand/knovix-logo-trimmed.png"
+            src="/brand/knovix-logo-header.png"
             alt="Knovix"
-            className="h-8 sm:h-9 w-auto object-contain"
+            className="h-10 sm:h-11 w-auto object-contain"
           />
         </Link>
 
@@ -127,7 +127,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
           onSubmit={onSearch}
           className="relative flex-1 min-w-0 sm:max-w-xl"
         >
-          <div className="flex items-stretch h-10 rounded-[4px] border border-slate-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-brand-400 focus-within:border-brand-400 shadow-sm">
+          <div className="flex items-stretch h-11 rounded-xl border border-slate-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-brand-400 focus-within:border-brand-400 shadow-card">
             <div className="shrink-0" ref={catRef}>
               <button
                 type="button"
@@ -147,7 +147,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search gadgets, accessories..."
+              placeholder='Search for "Air fryer"'
               className="flex-1 min-w-0 h-full px-3 text-sm focus:outline-none"
             />
 

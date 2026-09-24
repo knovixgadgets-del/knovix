@@ -25,6 +25,7 @@ export default function Login() {
   const [step, setStep] = useState('phone') // 'phone' | 'otp'
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
+  const [otpLength, setOtpLength] = useState(4) // server tells us the real length via otpLength
   const [name, setName] = useState('')
   const [askName, setAskName] = useState(false)
 
@@ -53,6 +54,7 @@ export default function Login() {
     setLoading(true)
     try {
       const res = await requestOtp(digits)
+      if (res.otpLength) setOtpLength(res.otpLength)
       setStep('otp')
       setSecondsLeft(res.resendIn || 45)
       setTimeout(() => otpInputRef.current?.focus(), 50)
@@ -68,6 +70,7 @@ export default function Login() {
     setLoading(true)
     try {
       const res = await requestOtp(phone.replace(/\D/g, ''))
+      if (res.otpLength) setOtpLength(res.otpLength)
       setSecondsLeft(res.resendIn || 45)
       setOtp('')
     } catch (err) {
@@ -80,8 +83,8 @@ export default function Login() {
   async function handleVerify(e) {
     e.preventDefault()
     setError('')
-    if (otp.replace(/\D/g, '').length !== 6) {
-      setError('Enter the 6-digit code sent to your phone.')
+    if (otp.replace(/\D/g, '').length !== otpLength) {
+      setError(`Enter the ${otpLength}-digit code sent to your phone.`)
       return
     }
     setLoading(true)
@@ -151,17 +154,17 @@ export default function Login() {
       {step === 'otp' && !askName && (
         <form onSubmit={handleVerify} className="mt-6 space-y-4">
           <div>
-            <label className="label">6-Digit OTP</label>
+            <label className="label">{otpLength}-Digit OTP</label>
             <input
               ref={otpInputRef}
               required
               type="text"
               inputMode="numeric"
-              maxLength={6}
-              placeholder="••••••"
+              maxLength={otpLength}
+              placeholder={'•'.repeat(otpLength)}
               className="input tracking-[0.4em] text-center text-lg"
               value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, otpLength))}
             />
           </div>
           <button disabled={loading} className="btn-primary w-full">

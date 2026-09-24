@@ -2,10 +2,11 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Phone + OTP signup/login, delivered via Fast2SMS.
+ * Phone + OTP signup/login, delivered via the Renflair SMS OTP API
+ * (https://renflair.in).
  *
  * Flow:
- *   1. POST /auth/otp/request  { phone }        -> sends a 6-digit OTP by SMS
+ *   1. POST /auth/otp/request  { phone }        -> sends an OTP by SMS
  *   2. POST /auth/otp/verify   { phone, otp, name? }
  *        -> first time for that phone: creates the account (name optional,
  *           falls back to "Customer"), logs them straight in
@@ -16,11 +17,15 @@ if (!defined('ABSPATH')) exit;
  *
  * SETUP REQUIRED (in wp-config.php, above "That's all, stop editing!"):
  *
- *   define('KNOVIX_FAST2SMS_API_KEY', 'your-fast2sms-api-key');
+ *   define('KNOVIX_RENFLAIR_API_KEY', 'your-renflair-api-key');
  *
- * Get the key from https://www.fast2sms.com/dashboard/dev-api after
- * signing up — the "OTP" route works on their free/trial credits too,
- * so you can test this before topping up.
+ * Optional:
+ *   define('KNOVIX_OTP_LENGTH', 4);   // 4-8 digits, default 4 (Renflair's documented format)
+ *
+ * Renflair API used (GET, JSON response with `status` and `message`):
+ *   https://sms.renflair.in/V1.php?API=<key>&PHONE=<10-digit>&OTP=<code>
+ * Renflair sends the message text itself ("<OTP> is your verification code
+ * for <your domain>") and needs no DLT registration.
  *
  * OTPs and rate-limit counters are stored in WordPress transients (they
  * auto-expire — no custom DB table needed).
@@ -43,25 +48,30 @@ function knovix_otp_transient_key($phone) { return 'knovix_otp_' . $phone; }
 function knovix_otp_cooldown_key($phone) { return 'knovix_otp_cd_' . $phone; }
 function knovix_otp_attempts_key($phone) { return 'knovix_otp_attempts_' . $phone; }
 
-/** Sends the OTP via Fast2SMS. Returns true/WP_Error. */
+/** OTP length: 4 digits by default (what Renflair documents); override with KNOVIX_OTP_LENGTH in wp-config.php. */
+function knovix_otp_length() {
+    $len = defined('KNOVIX_OTP_LENGTH') ? (int) KNOVIX_OTP_LENGTH : 4;
+    return ($len >= 4 && $len <= 8) ? $len : 4;
+}
+
+function knovix_generate_otp() {
+    $len = knovix_otp_length();
+    return (string) wp_rand((int) pow(10, $len - 1), (int) pow(10, $len) - 1);
+}
+
+/** Sends the OTP via Renflair's SMS OTP API. Returns true/WP_Error. */
 function knovix_send_otp_sms($phone, $otp) {
-    if (!defined('KNOVIX_FAST2SMS_API_KEY') || !KNOVIX_FAST2SMS_API_KEY) {
-        return knovix_error('SMS is not configured on the server yet (missing Fast2SMS API key).', 500);
+    if (!defined('KNOVIX_RENFLAIR_API_KEY') || !KNOVIX_RENFLAIR_API_KEY) {
+        return knovix_error('SMS is not configured on the server yet (missing Renflair API key).', 500);
     }
 
-    $response = wp_remote_post('https://www.fast2sms.com/dev/bulkV2', [
-        'timeout' => 10,
-        'headers' => [
-            'authorization' => KNOVIX_FAST2SMS_API_KEY,
-            'Content-Type'  => 'application/x-www-form-urlencoded',
-        ],
-        'body' => [
-            'route'            => 'otp',
-            'variables_values' => $otp,
-            'numbers'          => $phone,
-            'flash'            => 0,
-        ],
-    ]);
+    $url = add_query_arg([
+        'API'   => KNOVIX_RENFLAIR_API_KEY,
+        'PHONE' => $phone,
+        'OTP'   => $otp,
+    ], 'https://sms.renflair.in/V1.php');
+
+    $response = wp_remote_get($url, ['timeout' => 10]);
 
     if (is_wp_error($response)) {
         return knovix_error('Could not reach the SMS provider. Please try again.', 502);
@@ -70,21 +80,18 @@ function knovix_send_otp_sms($phone, $otp) {
     $code = wp_remote_retrieve_response_code($response);
     $body = json_decode(wp_remote_retrieve_body($response), true);
 
-    // Fast2SMS's error shape is inconsistent — sometimes `message` is a
-    // plain string (e.g. auth failures: "Invalid Authentication, Check
-    // Authorization Key"), sometimes an array of strings (e.g. validation
-    // errors). Blindly reading [0] silently truncated a string message to
-    // its first character instead of showing it — handle both shapes.
-    $fast2sms_message = $body['message'] ?? null;
-    if (is_array($fast2sms_message)) {
-        $fast2sms_message = $fast2sms_message[0] ?? null;
-    }
-    if (!$fast2sms_message || !is_string($fast2sms_message)) {
-        $fast2sms_message = 'Failed to send OTP SMS.';
-    }
+    // Renflair replies with JSON: { "status": "...", "message": "..." }.
+    // Be tolerant about the exact wording/type of `status` and `message`.
+    $status  = is_array($body) ? ($body['status'] ?? null) : null;
+    $message = is_array($body) ? ($body['message'] ?? null) : null;
+    if (is_array($message)) $message = $message[0] ?? null;
+    if (!$message || !is_string($message)) $message = 'Failed to send OTP SMS.';
 
-    if ($code >= 300 || empty($body['return'])) {
-        return knovix_error($fast2sms_message, 502);
+    $ok = $status === true || $status === 1
+        || (is_string($status) && in_array(strtolower(trim($status)), ['success', 'true', '1', 'ok', 'sent'], true));
+
+    if ($code >= 300 || !$ok) {
+        return knovix_error($message, 502);
     }
 
     return true;
@@ -115,7 +122,7 @@ function knovix_register_otp_routes() {
                 return knovix_error('Please wait before requesting another OTP.', 429);
             }
 
-            $otp = (string) wp_rand(100000, 999999);
+            $otp = knovix_generate_otp();
 
             $sent = knovix_send_otp_sms($phone, $otp);
             if (is_wp_error($sent)) return $sent;
@@ -126,6 +133,7 @@ function knovix_register_otp_routes() {
 
             return [
                 'success'    => true,
+                'otpLength'  => knovix_otp_length(),
                 'expiresIn'  => KNOVIX_OTP_TTL,
                 'resendIn'   => KNOVIX_OTP_RESEND_WAIT,
             ];
@@ -141,7 +149,8 @@ function knovix_register_otp_routes() {
             $name  = sanitize_text_field((string) $req->get_param('name'));
 
             if (!$phone) return knovix_error('Enter a valid 10-digit mobile number.', 422);
-            if (strlen($otp) !== 6) return knovix_error('Enter the 6-digit code sent to your phone.', 422);
+            $otp_len = knovix_otp_length();
+            if (strlen($otp) !== $otp_len) return knovix_error("Enter the {$otp_len}-digit code sent to your phone.", 422);
 
             $stored_hash = get_transient(knovix_otp_transient_key($phone));
             if (!$stored_hash) return knovix_error('That code has expired. Please request a new one.', 410);

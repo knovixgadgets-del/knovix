@@ -191,3 +191,58 @@ export function CategoryIcon({ className = 'w-5 h-5' }) {
     </svg>
   )
 }
+
+// ---- Category tab icons (used by the Shop page tab strip) ----
+export function BoltIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M13 3 5 13.5h6L10 21l8-10.5h-6L13 3Z" />
+    </svg>
+  )
+}
+
+export function BottleIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M10 3h4v3h-4zM9 6h6l1 3v10.5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 8 19.5V9l1-3Z" />
+      <path d="M8 12h8" />
+    </svg>
+  )
+}
+
+export function HangerIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M12 8V6.5a2 2 0 1 1 2 2" />
+      <path d="M12 8 3 15.5a1 1 0 0 0 .65 1.75h16.7A1 1 0 0 0 21 15.5L12 8Z" />
+    </svg>
+  )
+}
+
+export function HeartPulseIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M20.4 5.6a5 5 0 0 0-7.1 0L12 6.9l-1.3-1.3a5 5 0 0 0-7.1 7.1L12 21l8.4-8.3a5 5 0 0 0 0-7.1Z" />
+      <path d="M3.5 12h4l1.5-3 3 6 1.5-3h7" />
+    </svg>
+  )
+}
+
+export function HeadphonesIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M4 15v-3a8 8 0 0 1 16 0v3" />
+      <rect x="3" y="14" width="4" height="6" rx="1.5" />
+      <rect x="17" y="14" width="4" height="6" rx="1.5" />
+    </svg>
+  )
+}
+
+export function TagIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7a1 1 0 0 1 .7.3l7.8 7.8a1 1 0 0 1 0 1.4l-7.7 7.7a1 1 0 0 1-1.4 0l-7.8-7.8a1 1 0 0 1-.3-.7Z" />
+      <circle cx="8.2" cy="8.2" r="1.3" />
+    </svg>
+  )
+}
