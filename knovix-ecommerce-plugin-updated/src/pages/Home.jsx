@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import HeroCarousel from '../components/HeroCarousel'
 import { CategoryIcon } from '../components/Icons'
 import { getCategories, getProducts } from '../api/products'
-import { testimonials } from '../data/mockData'
 
 const perks = [
   ['🚚', 'Free Shipping Across India', 'On orders above ₹199'],
@@ -13,18 +12,36 @@ const perks = [
   ['💬', '24/7 Customer Support', "We're here to help anytime, anywhere"]
 ]
 
-function useCountdown(hours = 51) {
-  const [target] = useState(() => Date.now() + hours * 3600 * 1000)
-  const [left, setLeft] = useState(target - Date.now())
+// Amazon-style single-day deal cycle: the countdown always shows how much
+// of *today* is left (hours/minutes/seconds only, no "days"), and quietly
+// rolls over to a fresh 24h window at midnight — same behavior as Amazon's
+// nightly-resetting "Deal of the Day" timer.
+function endOfToday() {
+  const end = new Date()
+  end.setHours(23, 59, 59, 999)
+  return end.getTime()
+}
+
+function useDealCountdown() {
+  const [target, setTarget] = useState(endOfToday)
+  const [left, setLeft] = useState(() => target - Date.now())
+
   useEffect(() => {
-    const t = setInterval(() => setLeft(Math.max(0, target - Date.now())), 1000)
+    const t = setInterval(() => {
+      const remaining = target - Date.now()
+      if (remaining <= 0) {
+        setTarget(endOfToday() + 86400000)
+      } else {
+        setLeft(remaining)
+      }
+    }, 1000)
     return () => clearInterval(t)
   }, [target])
-  const d = Math.floor(left / 86400000)
-  const h = Math.floor((left % 86400000) / 3600000)
+
+  const h = Math.floor(left / 3600000)
   const m = Math.floor((left % 3600000) / 60000)
   const s = Math.floor((left % 60000) / 1000)
-  return { d, h, m, s }
+  return { h, m, s }
 }
 
 function ProductGridSkeleton({ count = 5 }) {
@@ -46,12 +63,12 @@ function ProductGridSkeleton({ count = 5 }) {
 // default broken-image icon, which renders at its own intrinsic size and
 // spills text out of the card instead of staying inside the fixed square —
 // this swaps in a clean placeholder the moment the image errors out.
-function CategoryThumb({ image, name }) {
+function CategoryThumb({ image, name, rounded = 'rounded-xl' }) {
   const [errored, setErrored] = useState(false)
   const showFallback = !image || errored
 
   return (
-    <div className="aspect-square rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+    <div className={`aspect-square ${rounded} overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center`}>
       {showFallback ? (
         <CategoryIcon className="w-6 h-6 text-slate-300" />
       ) : (
@@ -87,7 +104,7 @@ export default function Home() {
   const [productsLoading, setProductsLoading] = useState(true)
   const [productsError, setProductsError] = useState(false)
 
-  const { d, h, m, s } = useCountdown()
+  const { h, m, s } = useDealCountdown()
 
   const loadCategories = useCallback(() => {
     setCategoriesLoading(true)
@@ -115,6 +132,18 @@ export default function Home() {
   const featured = products.filter((p) => p.featured)
   const bestSellers = products.filter((p) => p.bestSeller)
 
+  // Mega Deals rail — the biggest real discounts in the catalog, ranked by
+  // % off (mrp vs price), the way Amazon's deals rail surfaces its steepest
+  // markdowns rather than a fixed/curated list.
+  const dealProducts = useMemo(
+    () =>
+      [...products]
+        .filter((p) => Number(p.mrp) > Number(p.price))
+        .sort((a, b) => (b.mrp - b.price) / b.mrp - (a.mrp - a.price) / a.mrp)
+        .slice(0, 8),
+    [products]
+  )
+
   // Hero slides: built from real, hyperlinked catalog data — prefer
   // featured products, falling back to whatever's loaded — instead of
   // stock/decorative imagery.
@@ -134,7 +163,7 @@ export default function Home() {
       {/* Real, crawlable heading — the hero carousel below is decorative and
           only ever renders an <h2>, so the page previously shipped with no
           <h1> at all. Kept compact since the hero carries the visual weight. */}
-      <section className="container-px max-w-7xl mx-auto pt-4">
+      <section className="container-px max-w-7xl mx-auto pt-4 pb-2">
         <h1 className="text-lg sm:text-xl font-bold font-display">
           Knovix – Smart Gadgets. Smarter Living.
         </h1>
@@ -144,19 +173,37 @@ export default function Home() {
         </p>
       </section>
 
-      <HeroCarousel slides={heroSlides} />
-
-      <section className="container-px max-w-7xl mx-auto py-4 grid grid-cols-2 md:grid-cols-4 gap-2.5">
-        {perks.map(([icon, title, desc]) => (
-          <div key={title} className="card px-3 py-2.5 flex items-center gap-2.5">
-            <span className="text-lg shrink-0">{icon}</span>
-            <div className="min-w-0">
-              <p className="font-semibold text-[13px] leading-tight truncate">{title}</p>
-              <p className="text-[11px] text-slate-500 leading-snug truncate">{desc}</p>
-            </div>
+      {/* Flipkart-style round category strip, sitting right above the
+          banner so shoppers can jump to a category before they even scroll. */}
+      <section className="container-px max-w-7xl mx-auto pb-3">
+        {categoriesError ? (
+          <LoadErrorNotice label="categories" onRetry={loadCategories} />
+        ) : (
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto no-scrollbar">
+            {(categoriesLoading ? Array.from({ length: 8 }) : categories).map((c, i) => (
+              categoriesLoading ? (
+                <div key={i} className="flex flex-col items-center gap-1.5 shrink-0 w-16">
+                  <div className="w-14 h-14 rounded-full bg-slate-100 animate-pulse" />
+                  <div className="h-2.5 w-10 rounded bg-slate-100 animate-pulse" />
+                </div>
+              ) : (
+                <Link
+                  key={c.id}
+                  to={`/shop?category=${c.id}`}
+                  className="flex flex-col items-center gap-1.5 shrink-0 w-16 text-center group"
+                >
+                  <span className="w-14 h-14 rounded-full overflow-hidden border border-slate-100 group-hover:border-brand-300 transition-colors">
+                    <CategoryThumb image={c.image} name={c.name} rounded="rounded-full" />
+                  </span>
+                  <span className="text-[11px] font-medium leading-tight line-clamp-2">{c.name}</span>
+                </Link>
+              )
+            ))}
           </div>
-        ))}
+        )}
       </section>
+
+      <HeroCarousel slides={heroSlides} />
 
       <section className="container-px max-w-7xl mx-auto py-6">
         <div className="flex items-center justify-between mb-4">
@@ -204,22 +251,45 @@ export default function Home() {
         )}
       </section>
 
-      <section className="container-px max-w-7xl mx-auto">
-        <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold flex items-center gap-1">⚡ FLASH SALE</p>
-            <h3 className="text-xl sm:text-2xl font-bold mt-1">Mega Deals on Top Gadgets!</h3>
-            <p className="text-sm text-brand-100">Limited time offers. Grab before it's gone.</p>
+      {/* Mega Deals — Amazon-style deals rail: a slim countdown ribbon
+          (resets every 24h, see useDealCountdown above) followed by a
+          horizontally-scrolling row of the catalog's steepest discounts,
+          instead of a single static banner. */}
+      <section className="container-px max-w-7xl mx-auto py-6">
+        <div className="rounded-xl overflow-hidden bg-gradient-to-r from-orange-500 to-red-600 text-white">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3">
+            <div>
+              <p className="text-xs font-semibold flex items-center gap-1">⚡ FLASH SALE</p>
+              <h2 className="text-lg sm:text-xl font-bold mt-0.5">Mega Deals on Top Gadgets!</h2>
+            </div>
+            <div className="flex items-center gap-2 text-xs sm:text-sm">
+              <span className="font-medium hidden sm:inline">Deal ends in</span>
+              {[['HH', h], ['MM', m], ['SS', s]].map(([label, val]) => (
+                <span key={label} className="bg-black/30 rounded-md px-2.5 py-1.5 min-w-[42px] text-center">
+                  <span className="font-bold font-mono text-sm sm:text-base">{String(val).padStart(2, '0')}</span>
+                  <span className="block text-[9px] uppercase leading-none mt-0.5">{label}</span>
+                </span>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2 sm:gap-3 text-center">
-            {[['Days', d], ['Hours', h], ['Minutes', m], ['Seconds', s]].map(([label, val]) => (
-              <div key={label} className="bg-black/30 rounded-lg px-2.5 sm:px-3 py-2 min-w-[52px] sm:min-w-[60px]">
-                <p className="text-lg sm:text-xl font-bold">{String(val).padStart(2, '0')}</p>
-                <p className="text-[10px] uppercase">{label}</p>
+        </div>
+
+        {productsError ? (
+          <div className="mt-4"><LoadErrorNotice label="deals" onRetry={loadProducts} /></div>
+        ) : productsLoading ? (
+          <div className="mt-4"><ProductGridSkeleton /></div>
+        ) : dealProducts.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto no-scrollbar mt-4 pb-1">
+            {dealProducts.map((p) => (
+              <div key={p.id} className="w-40 sm:w-48 shrink-0">
+                <ProductCard product={p} />
               </div>
             ))}
           </div>
-          <Link to="/shop" className="btn-dark bg-black">Shop the Sale</Link>
+        ) : null}
+
+        <div className="text-right mt-2">
+          <Link to="/shop" className="text-brand-700 text-sm font-medium">See all deals →</Link>
         </div>
       </section>
 
@@ -240,19 +310,6 @@ export default function Home() {
         )}
       </section>
 
-      <section className="container-px max-w-7xl mx-auto py-8">
-        <h2 className="text-lg sm:text-xl font-bold text-center mb-5">What Our Customers Say</h2>
-        <div className="grid md:grid-cols-3 gap-4">
-          {testimonials.map((t) => (
-            <div key={t.name} className="card p-5">
-              <p className="text-amber-400 text-sm">{'★'.repeat(t.rating)}</p>
-              <p className="text-sm text-slate-600 mt-2">"{t.text}"</p>
-              <p className="text-sm font-semibold mt-3">{t.name}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section className="bg-brand-50">
         <div className="container-px max-w-7xl mx-auto py-7 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -263,6 +320,25 @@ export default function Home() {
             <input type="email" required placeholder="Enter your email address" className="input w-64" />
             <button className="btn-primary">Subscribe</button>
           </form>
+        </div>
+      </section>
+
+      {/* Trust-badge strip — kept as the very last section of the page so
+          it sits directly above the global footer, the way Amazon places
+          its shipping/returns/payment/support reassurance band. */}
+      <section className="bg-slate-50 border-t border-slate-100">
+        <div className="container-px max-w-7xl mx-auto py-8 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4 md:divide-x md:divide-slate-200">
+          {perks.map(([icon, title, desc]) => (
+            <div key={title} className="flex flex-col items-center text-center gap-2 px-2 md:px-4">
+              <span className="w-12 h-12 rounded-full bg-white shadow-card flex items-center justify-center text-2xl">
+                {icon}
+              </span>
+              <div>
+                <p className="font-semibold text-sm">{title}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>

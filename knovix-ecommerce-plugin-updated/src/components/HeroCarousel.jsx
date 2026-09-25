@@ -4,10 +4,9 @@ import { ChevronRightIcon } from './Icons'
 
 const AUTOPLAY_MS = 5000
 
-// Light "product collage" banner (badge + heading + two CTAs + device
-// photo on a soft mint card) — replaces the earlier full-bleed dark
-// gradient banner with the airier, card-style layout used on the
-// reference homepage.
+// Full-bleed, edge-to-edge banner — the same "wide strip stretching past
+// the page margins" treatment Amazon and Flipkart both use for their top
+// hero, rather than a rounded card inset inside the content column.
 export default function HeroCarousel({ slides = [] }) {
   const [active, setActive] = useState(0)
   const [paused, setPaused] = useState(false)
@@ -30,9 +29,7 @@ export default function HeroCarousel({ slides = [] }) {
 
   if (count === 0) {
     return (
-      <div className="container-px max-w-7xl mx-auto pt-3 sm:pt-4">
-        <div className="w-full h-[260px] sm:h-[360px] lg:h-[420px] rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 animate-pulse" />
-      </div>
+      <div className="w-full h-[240px] sm:h-[340px] lg:h-[400px] bg-gradient-to-br from-brand-50 to-brand-100 animate-pulse" />
     )
   }
 
@@ -47,9 +44,9 @@ export default function HeroCarousel({ slides = [] }) {
   }
 
   return (
-    <div className="container-px max-w-7xl mx-auto pt-3 sm:pt-4">
+    <div className="w-full">
       <div
-        className="relative w-full h-[260px] sm:h-[360px] lg:h-[420px] overflow-hidden rounded-2xl bg-gradient-to-br from-brand-50 via-brand-50 to-teal-50 select-none"
+        className="relative w-full h-[240px] sm:h-[340px] lg:h-[420px] overflow-hidden bg-gradient-to-br from-brand-50 via-brand-50 to-teal-50 select-none"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         onTouchStart={onTouchStart}
@@ -59,6 +56,11 @@ export default function HeroCarousel({ slides = [] }) {
             reference banner without pulling in an external image asset. */}
         <div className="pointer-events-none absolute -right-16 -top-16 w-72 h-72 rounded-full bg-brand-200/40 blur-2xl" />
         <div className="pointer-events-none absolute right-10 bottom-0 w-56 h-56 rounded-full border-[10px] border-white/60" />
+
+        {/* Soft fade at the bottom edge — the same trick Amazon's full-bleed
+            banner uses so it reads as blending into the page rather than
+            ending in a hard line. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 sm:h-14 bg-gradient-to-t from-black/10 to-transparent" />
 
         {/* Slide track */}
         <div

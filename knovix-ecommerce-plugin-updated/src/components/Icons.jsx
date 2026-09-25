@@ -246,3 +246,34 @@ export function TagIcon({ className = 'w-6 h-6' }) {
     </svg>
   )
 }
+
+// ---- Order confirmation / account order-history icons ----
+export function CheckCircleIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8 12.3 2.6 2.6L16.2 9" />
+    </svg>
+  )
+}
+
+export function BoxIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="m3.5 8 8.5-4 8.5 4-8.5 4-8.5-4Z" />
+      <path d="M3.5 8v8l8.5 4 8.5-4V8" />
+      <path d="M12 12v8" />
+    </svg>
+  )
+}
+
+export function TruckIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M2.5 6.5h11v9h-11z" />
+      <path d="M13.5 10h3.6l3.4 2.7v2.8h-7" />
+      <circle cx="6.3" cy="18.3" r="1.6" />
+      <circle cx="16.7" cy="18.3" r="1.6" />
+    </svg>
+  )
+}

@@ -82,16 +82,22 @@ export default function Header({ menuOpen, setMenuOpen }) {
     setMenuOpen(false)
   }
 
-  // Visual/camera search: WordPress's product API doesn't do image
-  // recognition, so this opens the device camera/photo picker and takes
-  // the shopper to the catalog with a note, rather than faking a match.
+  // Visual/camera search: WordPress's product API doesn't do object
+  // recognition, so rather than faking a match this captures the photo and
+  // hands it to Shop, which ranks the real catalog by actual pixel-color
+  // similarity to the photo (see src/utils/visualSearch.js) — a genuine,
+  // if simple, on-device comparison instead of a placeholder.
   function onScanImage(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
 
-    navigate('/shop?visualSearch=1')
-    setMenuOpen(false)
+    const reader = new FileReader()
+    reader.onload = () => {
+      navigate('/shop?visualSearch=1', { state: { visualSearchPhoto: reader.result } })
+      setMenuOpen(false)
+    }
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -163,7 +169,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder='Search for "Air fryer"'
+              placeholder='Search for "Mobile charger"'
               className="flex-1 min-w-0 h-full px-3 text-sm focus:outline-none"
             />
 

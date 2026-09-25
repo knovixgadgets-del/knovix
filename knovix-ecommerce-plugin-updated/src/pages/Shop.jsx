@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
+import { CategoryIcon } from '../components/Icons'
 import { getCategories, getProducts } from '../api/products'
+import { rankProductsByPhoto } from '../utils/visualSearch'
 
 // Skeleton grid shown while products are loading — mirrors the real
 // product-card grid (image + title + price blocks) so the page doesn't
@@ -22,8 +24,36 @@ function ProductGridSkeleton({ count = 8 }) {
   )
 }
 
+// Same broken-image fallback pattern used on the homepage's category grid —
+// swaps in the category icon the moment the thumbnail errors out instead of
+// showing the browser's default broken-image glyph.
+function CategoryTile({ id, image, name }) {
+  const [errored, setErrored] = useState(false)
+  const showFallback = !image || errored
+
+  return (
+    <Link to={`/shop?category=${id}`} className="block text-center group w-full min-w-0">
+      <div className="aspect-square rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+        {showFallback ? (
+          <CategoryIcon className="w-6 h-6 text-slate-300" />
+        ) : (
+          <img
+            src={image}
+            alt={name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+            loading="lazy"
+            onError={() => setErrored(true)}
+          />
+        )}
+      </div>
+      <p className="text-xs mt-1.5 font-medium truncate w-full">{name}</p>
+    </Link>
+  )
+}
+
 export default function Shop() {
   const [params, setParams] = useSearchParams()
+  const location = useLocation()
 
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
@@ -36,6 +66,30 @@ export default function Shop() {
   const search = params.get('search') || ''
   const sort = params.get('sort') || ''
   const visualSearch = params.get('visualSearch') === '1'
+
+  // The captured/uploaded photo travels via router state from the header's
+  // camera button (see Header.jsx). A direct visit to ?visualSearch=1 with
+  // no photo (e.g. a refresh) just falls back to the full catalog below.
+  const visualPhoto = location.state?.visualSearchPhoto || null
+  const [visualRanked, setVisualRanked] = useState(null)
+  const [visualLoading, setVisualLoading] = useState(false)
+
+  useEffect(() => {
+    if (!visualSearch || !visualPhoto || products.length === 0) {
+      setVisualRanked(null)
+      return
+    }
+
+    let cancelled = false
+    setVisualLoading(true)
+
+    rankProductsByPhoto(visualPhoto, products)
+      .then((ranked) => { if (!cancelled) setVisualRanked(ranked) })
+      .catch(() => { if (!cancelled) setVisualRanked(null) })
+      .finally(() => { if (!cancelled) setVisualLoading(false) })
+
+    return () => { cancelled = true }
+  }, [visualSearch, visualPhoto, products])
 
   // Load categories
   useEffect(() => {
@@ -83,7 +137,7 @@ export default function Shop() {
     }
   }, [category, search, sort, retryKey])
 
-  const filtered = products
+  const filtered = visualSearch && visualRanked ? visualRanked : products
 
   // Update URL parameter
   function setParam(key, value) {
@@ -214,13 +268,26 @@ export default function Shop() {
 
         </div>
 
-        {/* Visual search notice — the camera-scan button in the header
-            doesn't do image recognition against the WordPress catalog (no
-            such API exists yet), so it's honest about showing the full
-            catalog instead of faking a match. */}
+        {/* Visual search notice — there's no product-recognition API behind
+            this catalog, so rather than faking an exact match, the camera
+            button ranks products by real pixel-color similarity to the
+            photo (see src/utils/visualSearch.js) and says so honestly. */}
         {visualSearch && (
-          <div className="mb-4 flex items-center justify-between gap-3 bg-brand-50 text-brand-700 text-sm rounded-md px-3 py-2">
-            <span>📷 Visual search is in preview — showing the full catalog for now. Try text search for exact matches.</span>
+          <div className="mb-4 flex items-center gap-3 bg-brand-50 text-brand-700 text-sm rounded-md px-3 py-2.5">
+            {visualPhoto && (
+              <img
+                src={visualPhoto}
+                alt="Your search photo"
+                className="w-10 h-10 rounded-md object-cover border border-brand-200 shrink-0"
+              />
+            )}
+            <span className="flex-1">
+              {!visualPhoto
+                ? '📷 Tap the camera icon in the search bar to try visual search.'
+                : visualLoading
+                  ? '📷 Matching your photo against the catalog…'
+                  : '📷 Showing products visually closest to your photo, best match first.'}
+            </span>
             <button
               type="button"
               onClick={() => setParam('visualSearch', '')}
@@ -259,10 +326,26 @@ export default function Shop() {
 
         ) : filtered.length === 0 ? (
 
-          /* No Products */
-          <p className="text-slate-500 text-sm">
-            No products found{search ? ` for "${search}"` : ''}.
-          </p>
+          /* No Products — instead of a dead end, let the shopper keep
+             browsing by category rather than just reporting the miss. */
+          <div className="text-center py-6">
+            <p className="text-slate-500 text-sm">
+              No products found{search ? ` for "${search}"` : ''}.
+            </p>
+
+            {categories.length > 0 && (
+              <div className="mt-6 text-left">
+                <h2 className="text-sm font-semibold text-ink-900 mb-3">
+                  Browse by category instead
+                </h2>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                  {categories.map((c) => (
+                    <CategoryTile key={c.id} id={c.id} image={c.image} name={c.name} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
         ) : (
 

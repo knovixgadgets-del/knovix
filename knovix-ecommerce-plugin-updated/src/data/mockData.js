@@ -30,12 +30,6 @@ export const products = [
   { id: 'p12', name: 'Knovix Commuter Laptop Backpack', category: 'laptop-accessories', price: 1799, mrp: 2999, rating: 4.5, reviews: 44, stock: 20, image: img('photo-1553062407-98eeb64c6a62'), description: 'Water-resistant 15.6" laptop backpack with USB charging port.', featured: false, bestSeller: false }
 ]
 
-export const testimonials = [
-  { name: 'Anand Krishna', text: 'Excellent quality products and super fast delivery. Highly recommended!', rating: 5 },
-  { name: 'Navya K S', text: 'Knovix Gadgets never disappoints. Best place for all tech accessories.', rating: 5 },
-  { name: 'Gokul T V', text: 'Good product, affordable price and great customer support.', rating: 5 }
-]
-
 export const demoUsers = [
   { id: 'u_admin', name: 'Admin', email: 'admin@knovix.com', password: 'admin123', role: 'admin' },
   { id: 'u_demo', name: 'Demo Customer', email: 'demo@knovix.com', password: 'demo1234', role: 'customer' }
