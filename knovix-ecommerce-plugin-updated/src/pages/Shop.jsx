@@ -1,45 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { getCategories, getProducts } from '../api/products'
-import {
-  BoltIcon,
-  BottleIcon,
-  CategoryIcon,
-  HangerIcon,
-  HeadphonesIcon,
-  HeartPulseIcon,
-  ShopIcon,
-  TagIcon
-} from '../components/Icons'
 
-// Picks a tab icon from the category name so tabs look like the app UI
-// (Beauty → bottle, Fashion → hanger, Health → heart-pulse …).
-function iconForCategory(name = '') {
-  const n = name.toLowerCase()
-  if (/beauty|care|groom|skin|cosmetic/.test(n)) return BottleIcon
-  if (/fashion|cloth|wear|apparel|watch/.test(n)) return HangerIcon
-  if (/health|fitness|wellness/.test(n)) return HeartPulseIcon
-  if (/audio|head|ear|speaker|sound|music/.test(n)) return HeadphonesIcon
-  if (/home|kitchen|living|appliance/.test(n)) return ShopIcon
-  return TagIcon
-}
-
-function CategoryTab({ active, onClick, icon: Icon, label }) {
+// Skeleton grid shown while products are loading — mirrors the real
+// product-card grid (image + title + price blocks) so the page doesn't
+// jump/reflow once results arrive, on mobile or desktop.
+function ProductGridSkeleton({ count = 8 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`relative shrink-0 flex flex-col items-center gap-1 px-4 pt-3 pb-2.5 text-[15px] transition-colors ${
-        active ? 'text-ink-900 font-semibold' : 'text-slate-500'
-      }`}
-    >
-      <Icon className="w-6 h-6" />
-      <span className="whitespace-nowrap">{label}</span>
-      {active && (
-        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] w-12 rounded-full bg-orange-500" />
-      )}
-    </button>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4" aria-hidden="true">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="bg-white rounded-2xl shadow-card p-3 pt-3.5">
+          <div className="aspect-square rounded-xl bg-slate-100 animate-pulse" />
+          <div className="h-3.5 rounded bg-slate-100 animate-pulse mt-3 w-full" />
+          <div className="h-3.5 rounded bg-slate-100 animate-pulse mt-1.5 w-2/3" />
+          <div className="h-5 rounded bg-slate-100 animate-pulse mt-2.5 w-1/2" />
+          <div className="h-3 rounded bg-slate-100 animate-pulse mt-2 w-1/3" />
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -51,7 +30,6 @@ export default function Shop() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [retryKey, setRetryKey] = useState(0)
-  const [maxPrice, setMaxPrice] = useState(5000)
 
   // URL parameters
   const category = params.get('category') || ''
@@ -105,13 +83,7 @@ export default function Shop() {
     }
   }, [category, search, sort, retryKey])
 
-  // Apply maximum price filter
-  const filtered = useMemo(() => {
-    return products.filter((p) => {
-      const price = Number(p.price) || 0
-      return price <= maxPrice
-    })
-  }, [products, maxPrice])
+  const filtered = products
 
   // Update URL parameter
   function setParam(key, value) {
@@ -134,51 +106,13 @@ export default function Shop() {
   return (
     <div className="bg-[#f6f4fb] min-h-[60vh]">
 
-      {/* Category tab strip — icon + label tabs with an underline on the
-          active one (Deals, All, then each store category). Desktop keeps
-          the sidebar category list below instead. */}
-      <div className="md:hidden bg-white border-b border-slate-100 shadow-sm">
-        <div className="flex overflow-x-auto no-scrollbar px-1">
-          <CategoryTab
-            icon={BoltIcon}
-            label="Deals"
-            active={sort === 'price_asc' && !category}
-            onClick={() => {
-              const next = new URLSearchParams(params)
-              next.delete('category')
-              next.set('sort', 'price_asc')
-              setParams(next)
-            }}
-          />
-          <CategoryTab
-            icon={CategoryIcon}
-            label="All"
-            active={!category && sort !== 'price_asc'}
-            onClick={() => {
-              const next = new URLSearchParams(params)
-              next.delete('category')
-              if (sort === 'price_asc') next.delete('sort')
-              setParams(next)
-            }}
-          />
-          {categories.map((c) => (
-            <CategoryTab
-              key={c.id}
-              icon={iconForCategory(c.name)}
-              label={c.name}
-              active={String(category) === String(c.id)}
-              onClick={() => setParam('category', String(c.id))}
-            />
-          ))}
-        </div>
-      </div>
-
     <div className="container-px max-w-7xl mx-auto py-4 md:py-8 grid md:grid-cols-[220px_1fr] gap-4 md:gap-8">
 
       {/* Sidebar */}
       <aside className="space-y-6">
 
-        {/* Category (desktop — mobile uses the tab strip above) */}
+        {/* Category (desktop — mobile browses via the header's category
+            picker and Deals / New Arrivals / Brands links instead) */}
         <div className="hidden md:block">
           <h3 className="font-semibold mb-2 text-sm">
             Category
@@ -217,23 +151,6 @@ export default function Shop() {
             ))}
 
           </ul>
-        </div>
-
-        {/* Price Filter */}
-        <div>
-          <h3 className="font-semibold mb-2 text-sm">
-            Max Price: ₹{maxPrice}
-          </h3>
-
-          <input
-            type="range"
-            min="300"
-            max="5000"
-            step="100"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(Number(e.target.value))}
-            className="w-full"
-          />
         </div>
 
       </aside>
@@ -314,12 +231,13 @@ export default function Shop() {
           </div>
         )}
 
-        {/* Loading */}
+        {/* Loading — skeleton cards matching the real grid, so the layout
+            doesn't jump/flash once results arrive (this was the loading
+            glitch on mobile: a one-line text swap that caused a visible
+            reflow against the fixed-height cards that replaced it). */}
         {loading ? (
 
-          <p className="text-slate-500 text-sm">
-            Loading products…
-          </p>
+          <ProductGridSkeleton />
 
         ) : error ? (
 
@@ -343,7 +261,7 @@ export default function Shop() {
 
           /* No Products */
           <p className="text-slate-500 text-sm">
-            No products match your filters.
+            No products found{search ? ` for "${search}"` : ''}.
           </p>
 
         ) : (

@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
@@ -22,7 +22,23 @@ const promoMessages = [
   '⚡ Mega Deals Live Now — Shop Today!'
 ]
 
+// Deals / New Arrivals / Brands carry a sort or path, not a plain route, so
+// react-router's own NavLink active-matching won't catch them — this checks
+// the current location against each link's own query/path instead.
+function isQuickLinkActive(link, location) {
+  const [path, query = ''] = link.to.split('?')
+  if (location.pathname !== path) return false
+  if (!query) return true
+  const want = new URLSearchParams(query)
+  const have = new URLSearchParams(location.search)
+  for (const [key, value] of want) {
+    if (have.get(key) !== value) return false
+  }
+  return true
+}
+
 export default function Header({ menuOpen, setMenuOpen }) {
+  const location = useLocation()
   const { count } = useCart()
   const { count: wishCount } = useWishlist()
   const { user, logout, isAdmin } = useAuth()
@@ -354,16 +370,26 @@ export default function Header({ menuOpen, setMenuOpen }) {
           second separate search row */}
       <div className="lg:hidden container-px max-w-7xl mx-auto pb-2.5">
         <nav className="flex flex-wrap items-center gap-2">
-          {quickLinks.map((l) => (
-            <Link
-              key={l.label}
-              to={l.to}
-              className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-brand-50 text-slate-700 hover:text-brand-700 border border-slate-200 rounded-full px-3 py-1 text-xs font-medium transition-colors"
-            >
-              <span>{l.icon}</span>
-              {l.label}
-            </Link>
-          ))}
+          {quickLinks.map((l) => {
+            const active = isQuickLinkActive(l, location)
+            return (
+              <Link
+                key={l.label}
+                to={l.to}
+                className={`relative inline-flex items-center gap-1.5 rounded-full px-3 pt-1 pb-1.5 text-xs font-medium border transition-colors ${
+                  active
+                    ? 'bg-brand-50 text-brand-700 border-brand-200'
+                    : 'bg-slate-50 hover:bg-brand-50 text-slate-700 hover:text-brand-700 border-slate-200'
+                }`}
+              >
+                <span>{l.icon}</span>
+                {l.label}
+                {active && (
+                  <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] w-6 rounded-full bg-brand-600" />
+                )}
+              </Link>
+            )
+          })}
         </nav>
       </div>
 
@@ -371,20 +397,29 @@ export default function Header({ menuOpen, setMenuOpen }) {
       <nav className="hidden lg:block border-t border-slate-100">
         <div className="container-px max-w-7xl mx-auto flex items-center gap-6 py-2 text-sm font-medium">
 
-          {navLinks.map((l) => (
-            <NavLink
-              key={l.label}
-              to={l.to}
-              className={({ isActive }) =>
-                isActive
-                  ? 'text-brand-700'
-                  : 'text-slate-700 hover:text-brand-700'
-              }
-              end={l.to === '/'}
-            >
-              {l.label}
-            </NavLink>
-          ))}
+          {navLinks.map((l) => {
+            const highlighted = ['Deals', 'New Arrivals', 'Brands'].includes(l.label)
+            const active = highlighted && isQuickLinkActive(l, location)
+            return (
+              <NavLink
+                key={l.label}
+                to={l.to}
+                className={({ isActive }) =>
+                  `relative pb-1 ${
+                    isActive || active
+                      ? 'text-brand-700'
+                      : 'text-slate-700 hover:text-brand-700'
+                  }`
+                }
+                end={l.to === '/'}
+              >
+                {l.label}
+                {active && (
+                  <span className="absolute -bottom-0.5 left-0 right-0 h-[2px] rounded-full bg-brand-600" />
+                )}
+              </NavLink>
+            )
+          })}
 
         </div>
       </nav>
