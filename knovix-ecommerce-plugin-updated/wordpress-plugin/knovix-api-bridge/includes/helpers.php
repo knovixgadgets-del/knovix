@@ -90,7 +90,7 @@ function knovix_format_order($order) {
             'phone'   => $order->get_billing_phone(),
             'address' => $order->get_billing_address_1(),
             'city'    => $order->get_billing_city(),
-            'state'   => $order->get_billing_state(),
+            'state'   => knovix_state_name($order->get_billing_state()),
             'pincode' => $order->get_billing_postcode()
         ],
         'items'     => $items,
@@ -136,8 +136,33 @@ function knovix_unmap_order_status($frontend_status) {
  *
  * Returns [ 'freeMin' => float|null, 'fee' => float ]
  */
+/** "1,000.50" / "250" / "" -> float, honouring the store's decimal/thousand separators. */
+function knovix_parse_amount($v) {
+    if ($v === null || $v === false || $v === '') return 0.0;
+    return (float) (function_exists('wc_format_decimal') ? wc_format_decimal($v) : $v);
+}
+
+/**
+ * The ONE place that decides how a WooCommerce "Free shipping" method qualifies,
+ * shared by the storefront banner (/shipping) and the real quote/order price.
+ * (They used to disagree: the banner counted the "coupon AND amount" mode as
+ * free while the quote never did.)
+ *
+ * Returns: 0.0   -> free for every order
+ *          float -> free when the order subtotal is >= that amount
+ *          null  -> cannot be met by this storefront (needs a coupon)
+ */
+function knovix_free_shipping_threshold($method) {
+    $requires = $method->get_option('requires');
+    if ($requires === '' || $requires === false || $requires === null) return 0.0;
+    if ($requires === 'min_amount' || $requires === 'either') {
+        return knovix_parse_amount($method->get_option('min_amount'));
+    }
+    return null; // 'coupon' / 'both'
+}
+
 function knovix_get_shipping_rules() {
-    $free_mins = []; // one entry per zone that has an enabled Free Shipping method
+    $free_mins = []; // lowest qualifying threshold of each zone that has an enabled Free Shipping method
     $fee       = null;
 
     if (class_exists('WC_Shipping_Zones')) {
@@ -151,13 +176,9 @@ function knovix_get_shipping_rules() {
             $zone = new WC_Shipping_Zone($zone_id);
             $zone_free = null;
             foreach ($zone->get_shipping_methods(true) as $method) { // enabled only
-                if ($method->id === 'free_shipping' && $zone_free === null) {
-                    $requires = $method->get_option('requires');
-                    if (in_array($requires, ['min_amount', 'either', 'both'], true)) {
-                        $zone_free = (float) $method->get_option('min_amount');
-                    } elseif ($requires === '' || $requires === false) {
-                        $zone_free = 0.0; // free for every order
-                    }
+                if ($method->id === 'free_shipping') {
+                    $t = knovix_free_shipping_threshold($method);
+                    if ($t !== null && ($zone_free === null || $t < $zone_free)) $zone_free = $t;
                 }
                 if ($method->id === 'flat_rate' && $fee === null) {
                     $cost = $method->get_option('cost');
@@ -168,25 +189,40 @@ function knovix_get_shipping_rules() {
         }
     }
 
-    // Use the HIGHEST per-zone threshold so the storefront banner
-    // ("Free shipping above Rs X") never promises more than any zone gives.
+    // Highest per-zone threshold = the amount that is free EVERYWHERE, so the banner
+    // never promises more than a zone gives. null = WooCommerce has no free-shipping
+    // rule, so the storefront must not advertise one (no invented default).
     $free_min = $free_mins ? max($free_mins) : null;
 
-    if ($free_min === null && defined('KNOVIX_FREE_SHIPPING_MIN')) $free_min = (float) KNOVIX_FREE_SHIPPING_MIN;
     if ($fee === null) $fee = defined('KNOVIX_SHIPPING_FEE') ? (float) KNOVIX_SHIPPING_FEE : 49.0;
 
     return ['freeMin' => $free_min, 'fee' => $fee];
 }
 
 /** Accepts a WooCommerce state code ("TN") or name ("Tamil Nadu"); returns the code or ''. */
+/** WooCommerce state code -> readable name (e.g. TN -> Tamil Nadu) for display. */
+function knovix_state_name($code) {
+    if ($code === '' || !function_exists('WC')) return (string) $code;
+    $states = WC()->countries->get_states('IN');
+    return (is_array($states) && isset($states[$code])) ? $states[$code] : (string) $code;
+}
+
 function knovix_state_code($input) {
     $input = trim((string) $input);
     if ($input === '' || !function_exists('WC')) return '';
     $states = WC()->countries->get_states('IN');
     if (!is_array($states)) return '';
     if (isset($states[strtoupper($input)])) return strtoupper($input);
+    // Compare names ignoring case, spaces and punctuation ("tamilnadu" == "Tamil Nadu"),
+    // plus the two states WooCommerce/PIN databases still list under old names.
+    $norm = function ($v) {
+        $v = strtolower(preg_replace('/[^a-z]/i', '', (string) $v));
+        $alias = ['orissa' => 'odisha', 'uttaranchal' => 'uttarakhand'];
+        return $alias[$v] ?? $v;
+    };
+    $want = $norm($input);
     foreach ($states as $code => $name) {
-        if (strcasecmp($name, $input) === 0) return $code;
+        if ($norm($name) === $want) return $code;
     }
     return '';
 }
@@ -241,7 +277,7 @@ function knovix_pincode_matches_state($pincode, $state_code) {
  *   [ 'available' => true,  'shipping' => 0|49|..., 'zone' => 'South Region' ]
  *   [ 'available' => false, 'reason'   => 'incomplete'|'mismatch'|'unavailable' ]
  */
-function knovix_quote_shipping($subtotal, $state, $pincode, $lines = []) {
+function knovix_quote_shipping($subtotal, $state, $pincode, $lines = [], $debug = false) {
     $state_code = knovix_state_code($state);
     $pincode    = preg_replace('/\D/', '', (string) $pincode);
     if ($state_code === '' || strlen($pincode) !== 6) {
@@ -250,6 +286,7 @@ function knovix_quote_shipping($subtotal, $state, $pincode, $lines = []) {
     if (!knovix_pincode_matches_state($pincode, $state_code)) {
         return ['available' => false, 'reason' => 'mismatch'];
     }
+    $subtotal = round((float) $subtotal, 2);
 
     $contents = [];
     foreach ($lines as $i => $l) {
@@ -282,18 +319,30 @@ function knovix_quote_shipping($subtotal, $state, $pincode, $lines = []) {
     $zone = WC_Shipping_Zones::get_zone_matching_package($package);
 
     $best = null;
-    $best_method = null;
+    $best_id = 'flat_rate'; $best_instance = 0; $best_title = 'Shipping';
+    $explain = [];
+
+    // Does the matched zone define a Free Shipping method at all (enabled or not)?
+    // If it does, the zone's own rule is respected exactly.
+    $zone_has_free = false;
+    foreach ($zone->get_shipping_methods(false) as $m) {
+        if ($m->id === 'free_shipping') { $zone_has_free = true; break; }
+    }
+
     foreach ($zone->get_shipping_methods(true) as $method) { // enabled methods only
         $cost = null;
+        $why  = '';
 
         if ($method->id === 'free_shipping') {
-            $requires = $method->get_option('requires');
-            if ($requires === '' || $requires === false) {
+            $t = knovix_free_shipping_threshold($method);
+            if ($t === null) {
+                $why = 'needs a coupon (requires=' . $method->get_option('requires') . ') - storefront has no coupons';
+            } elseif ($subtotal >= $t) {
                 $cost = 0.0;
-            } elseif (in_array($requires, ['min_amount', 'either'], true)
-                      && $subtotal >= (float) $method->get_option('min_amount')) {
-                $cost = 0.0;
-            } // 'coupon' / 'both' need a coupon, which this storefront doesn't support
+                $why  = "subtotal {$subtotal} >= minimum {$t}";
+            } else {
+                $why = "subtotal {$subtotal} < minimum {$t}";
+            }
 
         } elseif ($method->id !== 'local_pickup') {
             try {
@@ -306,18 +355,42 @@ function knovix_quote_shipping($subtotal, $state, $pincode, $lines = []) {
                 $c = $method->get_option('cost');
                 if (is_numeric($c)) $cost = (float) $c;
             }
+            $why = $cost === null ? 'no rate' : 'rate ' . $cost;
         }
 
-        if ($cost !== null && ($best === null || $cost < $best)) { $best = $cost; $best_method = $method; }
+        $explain[] = ['method' => $method->id, 'title' => $method->get_title(), 'cost' => $cost, 'note' => $why];
+        if ($cost !== null && ($best === null || $cost < $best)) {
+            $best = $cost; $best_id = $method->id; $best_instance = (int) $method->get_instance_id(); $best_title = $method->get_title();
+        }
     }
 
-    if ($best === null) return ['available' => false, 'reason' => 'unavailable'];
-    return [
+    // The storefront advertises ONE store-wide "free shipping above Rs X" (built from
+    // the WooCommerce zones, see knovix_get_shipping_rules). If the customer's zone
+    // has no Free Shipping method (e.g. it was only added to another zone), that
+    // promise used to be broken and the flat fee was charged anyway. Honour it here.
+    // Opt out with define('KNOVIX_STRICT_ZONE_FREE_SHIPPING', true) in wp-config.php.
+    if (!$zone_has_free && !(defined('KNOVIX_STRICT_ZONE_FREE_SHIPPING') && KNOVIX_STRICT_ZONE_FREE_SHIPPING)) {
+        $rules = knovix_get_shipping_rules();
+        if ($rules['freeMin'] !== null && $subtotal >= $rules['freeMin'] && ($best === null || $best > 0)) {
+            $best = 0.0; $best_id = 'free_shipping'; $best_instance = 0; $best_title = 'Free shipping';
+            $explain[] = ['method' => 'free_shipping', 'title' => 'Free shipping (store-wide)', 'cost' => 0.0,
+                          'note' => "zone '" . $zone->get_zone_name() . "' has no Free Shipping method; applied store-wide minimum {$rules['freeMin']}"];
+        }
+    }
+
+    if ($best === null) {
+        $out = ['available' => false, 'reason' => 'unavailable'];
+        if ($debug) $out['debug'] = ['zone' => $zone->get_zone_name(), 'subtotal' => $subtotal, 'methods' => $explain];
+        return $out;
+    }
+    $out = [
         'available'    => true,
         'shipping'     => $best,
         'zone'         => $zone->get_zone_name(),
-        'method_id'    => $best_method ? $best_method->id : 'flat_rate',
-        'instance_id'  => $best_method ? (int) $best_method->get_instance_id() : 0,
-        'method_title' => $best_method ? $best_method->get_title() : 'Shipping',
+        'method_id'    => $best_id,
+        'instance_id'  => $best_instance,
+        'method_title' => $best_title,
     ];
+    if ($debug) $out['debug'] = ['zone' => $zone->get_zone_name(), 'subtotal' => $subtotal, 'methods' => $explain];
+    return $out;
 }

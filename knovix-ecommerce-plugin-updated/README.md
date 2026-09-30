@@ -253,3 +253,14 @@ src/
 - Security: `GET /orders/:id` now requires the order key (returned once at checkout) for guests, so order IDs can't be enumerated to read other customers' details. Logged-in owners and admins are unaffected.
 - Fixes: deal countdown showed ~47h after midnight; cart cleared before navigation at checkout; 10-digit phone validation (frontend + backend); COD orders no longer say "Total paid"; leftover purple/old-teal colors replaced with brand colors.
 - dist/ was patched by hand to match src/ - run `npm install && npm run build` to regenerate it cleanly.
+
+## Shipping: free-shipping minimum fix
+- One shared rule (`knovix_free_shipping_threshold`) now drives both the banner and the real quote/order price. Before, the banner counted "coupon AND min amount" as free but the quote never did.
+- The banner no longer invents a default: the hard-coded 199 fallback (plugin constant + frontend) is gone. If WooCommerce has no free-shipping rule, no "free above" promise is shown.
+- If the customer's zone has no Free Shipping method but another zone does, the store-wide minimum is now honoured instead of charging the flat fee. Opt out with `define('KNOVIX_STRICT_ZONE_FREE_SHIPPING', true);` in wp-config.php.
+- Amount parsing respects WooCommerce separators; `/shipping` and `/shipping/quote` are sent with no-store cache headers.
+- Debug: POST `/wp-json/knovix/v1/shipping/quote` with `"debug": true` returns the zone, each method and why it did/didn't qualify.
+
+## Checkout state dropdown
+- Address > State is a dropdown of the 28 Indian states: Kerala, Tamil Nadu, Karnataka first, then the rest A-Z (`src/utils/shipping.js`). Union territories (Delhi, Puducherry, etc.) are not listed.
+- The value sent is the state name; the backend maps it to the WooCommerce code (case/space-insensitive, Orissa/Odisha and Uttaranchal/Uttarakhand aliases). Order confirmations now show the full state name instead of the code.

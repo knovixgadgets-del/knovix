@@ -7,7 +7,7 @@ import { CategoryIcon } from '../components/Icons'
 import { getCategories, getProducts } from '../api/products'
 
 const buildPerks = (freeMin) => [
-  ['🚚', 'Free Shipping Across India', `On orders above ₹${freeMin}`],
+  ['🚚', 'Free Shipping Across India', freeMin ? `On orders above ₹${freeMin}` : 'On eligible orders'],
   ['🔄', '7-Day Easy Replacement', 'For damaged or defective products'],
   ['🛡️', '100% Secure Payments', 'Multiple secure payment options'],
   ['💬', '24/7 Customer Support', "We're here to help anytime, anywhere"]

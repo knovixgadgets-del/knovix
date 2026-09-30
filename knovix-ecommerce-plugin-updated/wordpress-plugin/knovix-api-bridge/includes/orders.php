@@ -8,7 +8,12 @@ function knovix_register_order_routes() {
     register_rest_route(KNOVIX_API_NS, '/shipping', [
         'methods'  => 'GET',
         'permission_callback' => 'knovix_public_permission',
-        'callback' => function () { return knovix_get_shipping_rules(); }
+        'callback' => function () {
+            // Never cache: the merchant edits these in WooCommerce and expects them live.
+            $res = rest_ensure_response(knovix_get_shipping_rules());
+            $res->header('Cache-Control', 'no-store, max-age=0');
+            return $res;
+        }
     ]);
 
     // Indian states exactly as WooCommerce names/codes them (for the checkout dropdown).
@@ -39,7 +44,11 @@ function knovix_register_order_routes() {
                 $subtotal += $total;
                 $lines[] = ['product' => $product, 'qty' => $qty, 'total' => $total];
             }
-            return knovix_quote_shipping($subtotal, $req->get_param('state'), $req->get_param('pincode'), $lines);
+            // ?debug=1 adds a per-method explanation of the decision (handy to see why a
+            // given subtotal was/wasn't free: open the Network tab, or POST to /shipping/quote).
+            $res = rest_ensure_response(knovix_quote_shipping($subtotal, $req->get_param('state'), $req->get_param('pincode'), $lines, (bool) $req->get_param('debug')));
+            $res->header('Cache-Control', 'no-store, max-age=0');
+            return $res;
         }
     ]);
 

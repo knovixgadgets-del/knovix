@@ -40,7 +40,7 @@ function isQuickLinkActive(link, location) {
 export default function Header({ menuOpen, setMenuOpen }) {
   const location = useLocation()
   const { freeMin } = useShippingRules()
-  const promoMessages = [`🚚 Free Shipping on all orders above ₹${freeMin}`, ...promoTail]
+  const promoMessages = freeMin ? [`🚚 Free Shipping on all orders above ₹${freeMin}`, ...promoTail] : promoTail
   const { count } = useCart()
   const { count: wishCount } = useWishlist()
   const { user, logout, isAdmin } = useAuth()

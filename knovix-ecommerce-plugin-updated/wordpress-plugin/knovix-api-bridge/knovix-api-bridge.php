@@ -17,7 +17,8 @@ if (!defined('ABSPATH')) {
 */
 
 define('KNOVIX_API_NS', 'knovix/v1');
-define('KNOVIX_FREE_SHIPPING_MIN', 199);
+// KNOVIX_FREE_SHIPPING_MIN was removed: the free-shipping minimum now comes only from
+// WooCommerce > Settings > Shipping (Free shipping > Minimum order amount).
 define('KNOVIX_SHIPPING_FEE', 49);
 
 
