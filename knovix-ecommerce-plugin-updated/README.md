@@ -239,3 +239,10 @@ src/
   `src/pages/Checkout.jsx`'s `handlePlaceOrder`.
 - Admin routes (`/admin/*`) are guarded client-side by `AdminRoute`; a real
   backend must also enforce this server-side (don't trust the client).
+
+## Shipping changelog (latest)
+- Checkout no longer adds a default shipping fee: shipping shows only after State + 6-digit pincode are entered and the backend returns a quote; Place Order stays disabled until then.
+- Backend (`knovix-api-bridge`): order route now validates items and prices shipping BEFORE creating the WooCommerce order, uses the real line-item subtotal for the free-shipping check, and records the real shipping method/zone on the order (also when free).
+- `/shipping` banner threshold now uses the highest per-zone free-shipping minimum so it never over-promises.
+- Optional pincode/state check: add `define('KNOVIX_VALIDATE_PINCODE_STATE', true);` to wp-config.php (off by default).
+- Remember: every state zone in WooCommerce > Shipping needs a Free Shipping method with minimum order amount 199 for "free above Rs 199" to hold in that zone.

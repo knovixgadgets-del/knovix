@@ -137,8 +137,8 @@ function knovix_unmap_order_status($frontend_status) {
  * Returns [ 'freeMin' => float|null, 'fee' => float ]
  */
 function knovix_get_shipping_rules() {
-    $free_min = null;
-    $fee      = null;
+    $free_mins = []; // one entry per zone that has an enabled Free Shipping method
+    $fee       = null;
 
     if (class_exists('WC_Shipping_Zones')) {
         $zone_ids = [];
@@ -149,13 +149,14 @@ function knovix_get_shipping_rules() {
 
         foreach ($zone_ids as $zone_id) {
             $zone = new WC_Shipping_Zone($zone_id);
+            $zone_free = null;
             foreach ($zone->get_shipping_methods(true) as $method) { // enabled only
-                if ($method->id === 'free_shipping' && $free_min === null) {
+                if ($method->id === 'free_shipping' && $zone_free === null) {
                     $requires = $method->get_option('requires');
                     if (in_array($requires, ['min_amount', 'either', 'both'], true)) {
-                        $free_min = (float) $method->get_option('min_amount');
+                        $zone_free = (float) $method->get_option('min_amount');
                     } elseif ($requires === '' || $requires === false) {
-                        $free_min = 0.0; // free for every order
+                        $zone_free = 0.0; // free for every order
                     }
                 }
                 if ($method->id === 'flat_rate' && $fee === null) {
@@ -163,8 +164,13 @@ function knovix_get_shipping_rules() {
                     if (is_numeric($cost)) $fee = (float) $cost;
                 }
             }
+            if ($zone_free !== null) $free_mins[] = $zone_free;
         }
     }
+
+    // Use the HIGHEST per-zone threshold so the storefront banner
+    // ("Free shipping above Rs X") never promises more than any zone gives.
+    $free_min = $free_mins ? max($free_mins) : null;
 
     if ($free_min === null && defined('KNOVIX_FREE_SHIPPING_MIN')) $free_min = (float) KNOVIX_FREE_SHIPPING_MIN;
     if ($fee === null) $fee = defined('KNOVIX_SHIPPING_FEE') ? (float) KNOVIX_SHIPPING_FEE : 49.0;
@@ -186,6 +192,38 @@ function knovix_state_code($input) {
 }
 
 /**
+ * Optional sanity check that a pincode belongs to the chosen state, using the
+ * first two digits of the Indian PIN. Prefixes we don't know are allowed.
+ * OFF by default (a wrong rejection would block a real sale). Enable by adding
+ *   define('KNOVIX_VALIDATE_PINCODE_STATE', true);
+ * to wp-config.php.
+ */
+function knovix_pincode_matches_state($pincode, $state_code) {
+    if (!defined('KNOVIX_VALIDATE_PINCODE_STATE') || !KNOVIX_VALIDATE_PINCODE_STATE) return true;
+    $map = [
+        '11' => ['DL'], '12' => ['HR'], '13' => ['HR'], '14' => ['PB'], '15' => ['PB'],
+        '16' => ['PB', 'CH', 'HR'], '17' => ['HP'], '18' => ['JK', 'LA'], '19' => ['JK', 'LA'],
+        '20' => ['UP', 'UK'], '21' => ['UP', 'UK'], '22' => ['UP', 'UK'], '23' => ['UP', 'UK'],
+        '24' => ['UP', 'UK'], '25' => ['UP', 'UK'], '26' => ['UP', 'UK'], '27' => ['UP', 'UK'], '28' => ['UP', 'UK'],
+        '30' => ['RJ'], '31' => ['RJ'], '32' => ['RJ'], '33' => ['RJ'], '34' => ['RJ'],
+        '36' => ['GJ', 'DD', 'DN'], '37' => ['GJ', 'DD', 'DN'], '38' => ['GJ', 'DD', 'DN'], '39' => ['GJ', 'DD', 'DN'],
+        '40' => ['MH', 'GA', 'DD', 'DN'], '41' => ['MH'], '42' => ['MH'], '43' => ['MH'], '44' => ['MH'],
+        '45' => ['MP'], '46' => ['MP'], '47' => ['MP'], '48' => ['MP'], '49' => ['CT'],
+        '50' => ['TS', 'TG', 'AP'], '51' => ['AP', 'TS', 'TG'], '52' => ['AP'], '53' => ['AP'],
+        '56' => ['KA'], '57' => ['KA'], '58' => ['KA'], '59' => ['KA'],
+        '60' => ['TN', 'PY'], '61' => ['TN', 'PY'], '62' => ['TN', 'PY'], '63' => ['TN', 'PY'], '64' => ['TN', 'PY'],
+        '67' => ['KL', 'LD', 'PY'], '68' => ['KL', 'LD'], '69' => ['KL'],
+        '70' => ['WB'], '71' => ['WB'], '72' => ['WB'], '73' => ['WB', 'SK'], '74' => ['WB', 'AN'],
+        '75' => ['OR', 'OD'], '76' => ['OR', 'OD'], '77' => ['OR', 'OD'], '78' => ['AS'],
+        '79' => ['AR', 'ML', 'MN', 'MZ', 'NL', 'TR'],
+        '80' => ['BR', 'JH'], '81' => ['BR', 'JH'], '82' => ['BR', 'JH'], '83' => ['JH', 'BR'], '84' => ['BR'], '85' => ['BR', 'JH'],
+    ];
+    $prefix = substr((string) $pincode, 0, 2);
+    if (!isset($map[$prefix])) return true;
+    return in_array($state_code, $map[$prefix], true);
+}
+
+/**
  * Real, destination-aware shipping quote that works with whatever is already
  * set up under WooCommerce > Settings > Shipping — no extra configuration.
  *
@@ -201,13 +239,16 @@ function knovix_state_code($input) {
  *
  * Returns:
  *   [ 'available' => true,  'shipping' => 0|49|..., 'zone' => 'South Region' ]
- *   [ 'available' => false, 'reason'   => 'incomplete'|'unavailable' ]
+ *   [ 'available' => false, 'reason'   => 'incomplete'|'mismatch'|'unavailable' ]
  */
 function knovix_quote_shipping($subtotal, $state, $pincode, $lines = []) {
     $state_code = knovix_state_code($state);
     $pincode    = preg_replace('/\D/', '', (string) $pincode);
     if ($state_code === '' || strlen($pincode) !== 6) {
         return ['available' => false, 'reason' => 'incomplete'];
+    }
+    if (!knovix_pincode_matches_state($pincode, $state_code)) {
+        return ['available' => false, 'reason' => 'mismatch'];
     }
 
     $contents = [];
@@ -241,6 +282,7 @@ function knovix_quote_shipping($subtotal, $state, $pincode, $lines = []) {
     $zone = WC_Shipping_Zones::get_zone_matching_package($package);
 
     $best = null;
+    $best_method = null;
     foreach ($zone->get_shipping_methods(true) as $method) { // enabled methods only
         $cost = null;
 
@@ -266,9 +308,16 @@ function knovix_quote_shipping($subtotal, $state, $pincode, $lines = []) {
             }
         }
 
-        if ($cost !== null && ($best === null || $cost < $best)) $best = $cost;
+        if ($cost !== null && ($best === null || $cost < $best)) { $best = $cost; $best_method = $method; }
     }
 
     if ($best === null) return ['available' => false, 'reason' => 'unavailable'];
-    return ['available' => true, 'shipping' => $best, 'zone' => $zone->get_zone_name()];
+    return [
+        'available'    => true,
+        'shipping'     => $best,
+        'zone'         => $zone->get_zone_name(),
+        'method_id'    => $best_method ? $best_method->id : 'flat_rate',
+        'instance_id'  => $best_method ? (int) $best_method->get_instance_id() : 0,
+        'method_title' => $best_method ? $best_method->get_title() : 'Shipping',
+    ];
 }

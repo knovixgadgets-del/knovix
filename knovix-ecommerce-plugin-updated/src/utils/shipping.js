@@ -55,7 +55,7 @@ export function useIndianStates() {
   return states
 }
 
-// Returns { status: 'incomplete' | 'loading' | 'ok' | 'unavailable' | 'error', shipping, zone }
+// Returns { status: 'incomplete' | 'loading' | 'ok' | 'unavailable' | 'mismatch' | 'error', shipping, zone }
 export function useShippingQuote(items, state, pincode) {
   const [quote, setQuote] = useState({ status: 'incomplete' })
   const ready = !!state && /^\d{6}$/.test(String(pincode || '').trim())
@@ -73,7 +73,7 @@ export function useShippingQuote(items, state, pincode) {
         .then((r) => {
           if (!alive) return
           if (r && r.available) setQuote({ status: 'ok', shipping: Number(r.shipping), zone: r.zone })
-          else setQuote({ status: r && r.reason === 'unavailable' ? 'unavailable' : 'incomplete' })
+          else setQuote({ status: r && (r.reason === 'unavailable' || r.reason === 'mismatch') ? r.reason : 'incomplete' })
         })
         .catch(() => alive && setQuote({ status: 'error' }))
     }, 350)

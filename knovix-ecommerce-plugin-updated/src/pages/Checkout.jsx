@@ -29,6 +29,7 @@ export default function Checkout() {
   if (quote.status === 'loading') shippingLabel = 'Calculating…'
   else if (quote.status === 'ok') shippingLabel = shipping === 0 ? 'Free' : `₹${shipping}`
   else if (quote.status === 'unavailable') shippingLabel = 'Not deliverable'
+  else if (quote.status === 'mismatch') shippingLabel = 'Check pincode'
   else if (quote.status === 'error') shippingLabel = 'Unavailable'
 
   function update(key, value) {
@@ -109,6 +110,7 @@ export default function Checkout() {
         </div>
 
         {quote.status === 'unavailable' && <p className="text-red-600 text-sm">Sorry, we don't deliver to this location yet.</p>}
+        {quote.status === 'mismatch' && <p className="text-red-600 text-sm">This pincode doesn't match the selected state. Please check and try again.</p>}
         {quote.status === 'error' && <p className="text-red-600 text-sm">Couldn't calculate shipping. Please check your connection and retry.</p>}
         <button disabled={!canPlace} className="btn-primary w-full disabled:opacity-60">{placing ? 'Placing order…' : quote.status === 'ok' ? `Place Order · ₹${total}` : 'Enter state & pincode to continue'}</button>
       </form>

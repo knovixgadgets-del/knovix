@@ -55,13 +55,38 @@ function knovix_register_order_routes() {
 
             if (empty($items)) return knovix_error('Order must contain at least one item', 400);
 
+            // 1) Validate every line and price it server-side BEFORE touching the DB.
+            $lines = [];
+            $subtotal = 0.0;
+            foreach ($items as $line) {
+                $product = wc_get_product((int) ($line['id'] ?? 0));
+                if (!$product || !$product->is_purchasable()) {
+                    return knovix_error('An item in your cart is no longer available. Please review your cart.', 400);
+                }
+                $qty   = max(1, (int) ($line['qty'] ?? 1));
+                $total = (float) $product->get_price() * $qty;
+                $subtotal += $total;
+                $lines[] = ['product' => $product, 'qty' => $qty, 'total' => $total];
+            }
+
+            // 2) Shipping is decided here from the WooCommerce shipping zones for the
+            //    customer's state + pincode, using the real line-item subtotal —
+            //    never trusted from the browser.
+            $quote = knovix_quote_shipping($subtotal, $customer['state'] ?? '', $customer['pincode'] ?? '', $lines);
+            if (empty($quote['available'])) {
+                $reason = $quote['reason'] ?? '';
+                $msg = 'Sorry, we do not deliver to this location.';
+                if ($reason === 'incomplete') $msg = 'Please select your state and enter a valid 6-digit pincode.';
+                if ($reason === 'mismatch')   $msg = 'This pincode does not match the selected state. Please check and try again.';
+                return knovix_error($msg, 422);
+            }
+
+            // 3) Only now create the order.
             $order = wc_create_order();
             if (is_wp_error($order)) return knovix_error($order->get_error_message(), 400);
 
-            foreach ($items as $line) {
-                $product = wc_get_product((int) $line['id']);
-                if (!$product) continue;
-                $order->add_product($product, (int) $line['qty']);
+            foreach ($lines as $l) {
+                $order->add_product($l['product'], $l['qty']);
             }
 
             $state_code = knovix_state_code($customer['state'] ?? '');
@@ -72,7 +97,7 @@ function knovix_register_order_routes() {
                 'address_1'  => sanitize_text_field($customer['address'] ?? ''),
                 'city'       => sanitize_text_field($customer['city'] ?? ''),
                 'state'      => $state_code,
-                'postcode'   => sanitize_text_field($customer['pincode'] ?? ''),
+                'postcode'   => preg_replace('/\D/', '', (string) ($customer['pincode'] ?? '')),
                 'country'    => 'IN',
             ];
             $order->set_address($addr, 'billing');
@@ -84,30 +109,14 @@ function knovix_register_order_routes() {
             $order->set_payment_method($payment);
             $order->set_payment_method_title(strtoupper($payment));
 
-            // Shipping is decided here from the WooCommerce shipping zones for the
-            // customer's state + pincode — never trusted from the browser.
-            $lines = [];
-            foreach ($order->get_items() as $oi) {
-                $prod = $oi->get_product();
-                if ($prod) $lines[] = ['product' => $prod, 'qty' => (int) $oi->get_quantity(), 'total' => (float) $oi->get_total()];
-            }
-            $quote = knovix_quote_shipping((float) $order->get_subtotal(), $customer['state'] ?? '', $customer['pincode'] ?? '', $lines);
-            if (empty($quote['available'])) {
-                $order->delete(true);
-                return knovix_error(
-                    ($quote['reason'] ?? '') === 'incomplete'
-                        ? 'Please select your state and enter a valid 6-digit pincode.'
-                        : 'Sorry, we do not deliver to this location.',
-                    422
-                );
-            }
-            $shipping = (float) $quote['shipping'];
-            if ($shipping > 0) {
-                $item = new WC_Order_Item_Shipping();
-                $item->set_method_title('Standard Shipping');
-                $item->set_total($shipping);
-                $order->add_item($item);
-            }
+            // Record the shipping line (even when free) with the real method + zone.
+            $ship_item = new WC_Order_Item_Shipping();
+            $ship_item->set_method_id($quote['method_id'] ?? 'flat_rate');
+            if (!empty($quote['instance_id'])) $ship_item->set_instance_id((int) $quote['instance_id']);
+            $ship_item->set_method_title($quote['method_title'] ?? 'Shipping');
+            $ship_item->set_total((float) $quote['shipping']);
+            if (!empty($quote['zone'])) $ship_item->add_meta_data('Shipping zone', $quote['zone'], true);
+            $order->add_item($ship_item);
 
             $order->calculate_totals();
             $order->set_status('processing'); // COD/UPI/Card all recorded as processing until fulfilled
