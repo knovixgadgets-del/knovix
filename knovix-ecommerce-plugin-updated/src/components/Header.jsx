@@ -1,4 +1,4 @@
-import { FREE_SHIPPING_THRESHOLD } from '../utils/shipping'
+import { useShippingRules } from '../utils/shipping'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from '../context/CartContext'
@@ -16,8 +16,7 @@ import {
   ChevronDownIcon
 } from './Icons'
 
-const promoMessages = [
-  `🚚 Free Shipping on all orders above ₹${FREE_SHIPPING_THRESHOLD}`,
+const promoTail = [
   '🔄 7-Day Easy Replacement',
   '💬 24/7 Customer Support',
   '⚡ Mega Deals Live Now — Shop Today!'
@@ -40,6 +39,8 @@ function isQuickLinkActive(link, location) {
 
 export default function Header({ menuOpen, setMenuOpen }) {
   const location = useLocation()
+  const { freeMin } = useShippingRules()
+  const promoMessages = [`🚚 Free Shipping on all orders above ₹${freeMin}`, ...promoTail]
   const { count } = useCart()
   const { count: wishCount } = useWishlist()
   const { user, logout, isAdmin } = useAuth()

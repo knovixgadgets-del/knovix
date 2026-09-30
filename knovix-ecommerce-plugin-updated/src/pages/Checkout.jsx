@@ -1,4 +1,4 @@
-import { getShipping } from '../utils/shipping'
+import { useIndianStates, useShippingQuote } from '../utils/shipping'
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
@@ -16,10 +16,20 @@ export default function Checkout() {
     name: user?.name || '', phone: '', address: '', city: '', state: '', pincode: ''
   })
 
+  const states = useIndianStates()
+  const quote = useShippingQuote(items, form.state, form.pincode)
+
   if (items.length === 0) return <Navigate to="/cart" replace />
 
-  const shipping = getShipping(subtotal)
+  const shipping = quote.status === 'ok' ? quote.shipping : 0
   const total = subtotal + shipping
+  const canPlace = quote.status === 'ok' && !placing
+
+  let shippingLabel = 'Enter state & pincode'
+  if (quote.status === 'loading') shippingLabel = 'Calculating…'
+  else if (quote.status === 'ok') shippingLabel = shipping === 0 ? 'Free' : `₹${shipping}`
+  else if (quote.status === 'unavailable') shippingLabel = 'Not deliverable'
+  else if (quote.status === 'error') shippingLabel = 'Unavailable'
 
   function update(key, value) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -34,9 +44,6 @@ export default function Checkout() {
         userId: user?.id || null,
         customer: form,
         items,
-        subtotal,
-        shipping,
-        total,
         payment
       })
       clearCart()
@@ -74,11 +81,18 @@ export default function Checkout() {
           </div>
           <div>
             <label className="label">State</label>
-            <input required className="input" value={form.state} onChange={(e) => update('state', e.target.value)} />
+            {states.length > 0 ? (
+              <select required className="input" value={form.state} onChange={(e) => update('state', e.target.value)}>
+                <option value="">Select state</option>
+                {states.map((st) => <option key={st.code} value={st.code}>{st.name}</option>)}
+              </select>
+            ) : (
+              <input required className="input" value={form.state} onChange={(e) => update('state', e.target.value)} />
+            )}
           </div>
           <div>
             <label className="label">Pincode</label>
-            <input required className="input" value={form.pincode} onChange={(e) => update('pincode', e.target.value)} />
+            <input required inputMode="numeric" maxLength={6} className="input" value={form.pincode} onChange={(e) => update('pincode', e.target.value.replace(/\D/g, ''))} />
           </div>
         </div>
 
@@ -94,7 +108,9 @@ export default function Checkout() {
           </div>
         </div>
 
-        <button disabled={placing} className="btn-primary w-full">{placing ? 'Placing order…' : `Place Order · ₹${total}`}</button>
+        {quote.status === 'unavailable' && <p className="text-red-600 text-sm">Sorry, we don't deliver to this location yet.</p>}
+        {quote.status === 'error' && <p className="text-red-600 text-sm">Couldn't calculate shipping. Please check your connection and retry.</p>}
+        <button disabled={!canPlace} className="btn-primary w-full disabled:opacity-60">{placing ? 'Placing order…' : quote.status === 'ok' ? `Place Order · ₹${total}` : 'Enter state & pincode to continue'}</button>
       </form>
 
       <div className="card p-5 h-fit">
@@ -109,7 +125,7 @@ export default function Checkout() {
         </div>
         <div className="text-sm space-y-2 border-t mt-3 pt-3">
           <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal}</span></div>
-          <div className="flex justify-between"><span>Shipping</span><span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span></div>
+          <div className="flex justify-between"><span>Shipping</span><span>{shippingLabel}</span></div>
           <div className="flex justify-between font-semibold text-base border-t pt-2"><span>Total</span><span>₹{total}</span></div>
         </div>
       </div>

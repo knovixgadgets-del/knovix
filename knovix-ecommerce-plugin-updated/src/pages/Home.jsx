@@ -1,4 +1,4 @@
-import { FREE_SHIPPING_THRESHOLD } from '../utils/shipping'
+import { useShippingRules } from '../utils/shipping'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
@@ -6,8 +6,8 @@ import HeroCarousel from '../components/HeroCarousel'
 import { CategoryIcon } from '../components/Icons'
 import { getCategories, getProducts } from '../api/products'
 
-const perks = [
-  ['🚚', 'Free Shipping Across India', `On orders above ₹${FREE_SHIPPING_THRESHOLD}`],
+const buildPerks = (freeMin) => [
+  ['🚚', 'Free Shipping Across India', `On orders above ₹${freeMin}`],
   ['🔄', '7-Day Easy Replacement', 'For damaged or defective products'],
   ['🛡️', '100% Secure Payments', 'Multiple secure payment options'],
   ['💬', '24/7 Customer Support', "We're here to help anytime, anywhere"]
@@ -97,6 +97,8 @@ function LoadErrorNotice({ onRetry, label }) {
 }
 
 export default function Home() {
+  const { freeMin } = useShippingRules()
+  const perks = buildPerks(freeMin)
   const [categories, setCategories] = useState([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [categoriesError, setCategoriesError] = useState(false)

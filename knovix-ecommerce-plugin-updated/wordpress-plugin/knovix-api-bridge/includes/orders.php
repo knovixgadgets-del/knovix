@@ -3,6 +3,46 @@ if (!defined('ABSPATH')) exit;
 
 function knovix_register_order_routes() {
 
+    // Public: the storefront reads the shipping rules configured in
+    // WooCommerce so cart/checkout always match the backend.
+    register_rest_route(KNOVIX_API_NS, '/shipping', [
+        'methods'  => 'GET',
+        'permission_callback' => 'knovix_public_permission',
+        'callback' => function () { return knovix_get_shipping_rules(); }
+    ]);
+
+    // Indian states exactly as WooCommerce names/codes them (for the checkout dropdown).
+    register_rest_route(KNOVIX_API_NS, '/shipping/states', [
+        'methods'  => 'GET',
+        'permission_callback' => 'knovix_public_permission',
+        'callback' => function () {
+            $out = [];
+            foreach ((array) WC()->countries->get_states('IN') as $code => $name) {
+                $out[] = ['code' => $code, 'name' => $name];
+            }
+            return $out;
+        }
+    ]);
+
+    // Shipping quote for a destination, using WooCommerce shipping zones.
+    register_rest_route(KNOVIX_API_NS, '/shipping/quote', [
+        'methods'  => 'POST',
+        'permission_callback' => 'knovix_public_permission',
+        'callback' => function (WP_REST_Request $req) {
+            $subtotal = 0.0;
+            $lines = [];
+            foreach ((array) ($req->get_param('items') ?: []) as $line) {
+                $product = wc_get_product((int) ($line['id'] ?? 0));
+                if (!$product) continue;
+                $qty   = max(1, (int) ($line['qty'] ?? 1));
+                $total = (float) $product->get_price() * $qty;
+                $subtotal += $total;
+                $lines[] = ['product' => $product, 'qty' => $qty, 'total' => $total];
+            }
+            return knovix_quote_shipping($subtotal, $req->get_param('state'), $req->get_param('pincode'), $lines);
+        }
+    ]);
+
     // Guest checkout is allowed, same as the mock backend — pass a Bearer
     // token if logged in and the order is attached to that account.
     register_rest_route(KNOVIX_API_NS, '/orders', [
@@ -24,24 +64,44 @@ function knovix_register_order_routes() {
                 $order->add_product($product, (int) $line['qty']);
             }
 
+            $state_code = knovix_state_code($customer['state'] ?? '');
             $name_parts = explode(' ', trim($customer['name'] ?? ''), 2);
-            $order->set_billing_first_name($name_parts[0] ?? '');
-            $order->set_billing_last_name($name_parts[1] ?? '');
+            $addr = [
+                'first_name' => $name_parts[0] ?? '',
+                'last_name'  => $name_parts[1] ?? '',
+                'address_1'  => sanitize_text_field($customer['address'] ?? ''),
+                'city'       => sanitize_text_field($customer['city'] ?? ''),
+                'state'      => $state_code,
+                'postcode'   => sanitize_text_field($customer['pincode'] ?? ''),
+                'country'    => 'IN',
+            ];
+            $order->set_address($addr, 'billing');
+            $order->set_address($addr, 'shipping');
             $order->set_billing_phone(sanitize_text_field($customer['phone'] ?? ''));
-            $order->set_billing_address_1(sanitize_text_field($customer['address'] ?? ''));
-            $order->set_billing_city(sanitize_text_field($customer['city'] ?? ''));
-            $order->set_billing_state(sanitize_text_field($customer['state'] ?? ''));
-            $order->set_billing_postcode(sanitize_text_field($customer['pincode'] ?? ''));
 
             if (is_user_logged_in()) $order->set_customer_id(get_current_user_id());
 
             $order->set_payment_method($payment);
             $order->set_payment_method_title(strtoupper($payment));
 
-            // Shipping is decided here, never trusted from the browser.
-            $free_min = defined('KNOVIX_FREE_SHIPPING_MIN') ? KNOVIX_FREE_SHIPPING_MIN : 199;
-            $fee      = defined('KNOVIX_SHIPPING_FEE') ? KNOVIX_SHIPPING_FEE : 49;
-            $shipping = ((float) $order->get_subtotal() >= $free_min) ? 0 : $fee;
+            // Shipping is decided here from the WooCommerce shipping zones for the
+            // customer's state + pincode — never trusted from the browser.
+            $lines = [];
+            foreach ($order->get_items() as $oi) {
+                $prod = $oi->get_product();
+                if ($prod) $lines[] = ['product' => $prod, 'qty' => (int) $oi->get_quantity(), 'total' => (float) $oi->get_total()];
+            }
+            $quote = knovix_quote_shipping((float) $order->get_subtotal(), $customer['state'] ?? '', $customer['pincode'] ?? '', $lines);
+            if (empty($quote['available'])) {
+                $order->delete(true);
+                return knovix_error(
+                    ($quote['reason'] ?? '') === 'incomplete'
+                        ? 'Please select your state and enter a valid 6-digit pincode.'
+                        : 'Sorry, we do not deliver to this location.',
+                    422
+                );
+            }
+            $shipping = (float) $quote['shipping'];
             if ($shipping > 0) {
                 $item = new WC_Order_Item_Shipping();
                 $item->set_method_title('Standard Shipping');

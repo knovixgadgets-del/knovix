@@ -126,3 +126,149 @@ function knovix_unmap_order_status($frontend_status) {
     ];
     return $map[$frontend_status] ?? 'processing';
 }
+
+
+/**
+ * Shipping rules, read live from WooCommerce > Settings > Shipping so the
+ * store owner controls them there (Free shipping "minimum order amount" and
+ * the Flat rate cost). Falls back to the constants in knovix-api-bridge.php
+ * only if no matching method is configured.
+ *
+ * Returns [ 'freeMin' => float|null, 'fee' => float ]
+ */
+function knovix_get_shipping_rules() {
+    $free_min = null;
+    $fee      = null;
+
+    if (class_exists('WC_Shipping_Zones')) {
+        $zone_ids = [];
+        foreach (WC_Shipping_Zones::get_zones() as $z) {
+            $zone_ids[] = (int) $z['zone_id'];
+        }
+        $zone_ids[] = 0; // "Locations not covered by your other zones"
+
+        foreach ($zone_ids as $zone_id) {
+            $zone = new WC_Shipping_Zone($zone_id);
+            foreach ($zone->get_shipping_methods(true) as $method) { // enabled only
+                if ($method->id === 'free_shipping' && $free_min === null) {
+                    $requires = $method->get_option('requires');
+                    if (in_array($requires, ['min_amount', 'either', 'both'], true)) {
+                        $free_min = (float) $method->get_option('min_amount');
+                    } elseif ($requires === '' || $requires === false) {
+                        $free_min = 0.0; // free for every order
+                    }
+                }
+                if ($method->id === 'flat_rate' && $fee === null) {
+                    $cost = $method->get_option('cost');
+                    if (is_numeric($cost)) $fee = (float) $cost;
+                }
+            }
+        }
+    }
+
+    if ($free_min === null && defined('KNOVIX_FREE_SHIPPING_MIN')) $free_min = (float) KNOVIX_FREE_SHIPPING_MIN;
+    if ($fee === null) $fee = defined('KNOVIX_SHIPPING_FEE') ? (float) KNOVIX_SHIPPING_FEE : 49.0;
+
+    return ['freeMin' => $free_min, 'fee' => $fee];
+}
+
+/** Accepts a WooCommerce state code ("TN") or name ("Tamil Nadu"); returns the code or ''. */
+function knovix_state_code($input) {
+    $input = trim((string) $input);
+    if ($input === '' || !function_exists('WC')) return '';
+    $states = WC()->countries->get_states('IN');
+    if (!is_array($states)) return '';
+    if (isset($states[strtoupper($input)])) return strtoupper($input);
+    foreach ($states as $code => $name) {
+        if (strcasecmp($name, $input) === 0) return $code;
+    }
+    return '';
+}
+
+/**
+ * Real, destination-aware shipping quote that works with whatever is already
+ * set up under WooCommerce > Settings > Shipping — no extra configuration.
+ *
+ *  - The zone is matched from the customer's state + pincode exactly like
+ *    WooCommerce does (first matching zone wins, else "Everywhere").
+ *  - Free shipping: honours "no requirement" and "minimum order amount".
+ *  - Flat rate (and any other rate-based method): WooCommerce's own
+ *    calculate_shipping() is used, so plain costs, formulas like
+ *    10 * [qty] and shipping-class costs all work.
+ *  - The cheapest available rate is charged.
+ *
+ * $lines: [ ['product' => WC_Product, 'qty' => int, 'total' => float], ... ]
+ *
+ * Returns:
+ *   [ 'available' => true,  'shipping' => 0|49|..., 'zone' => 'South Region' ]
+ *   [ 'available' => false, 'reason'   => 'incomplete'|'unavailable' ]
+ */
+function knovix_quote_shipping($subtotal, $state, $pincode, $lines = []) {
+    $state_code = knovix_state_code($state);
+    $pincode    = preg_replace('/\D/', '', (string) $pincode);
+    if ($state_code === '' || strlen($pincode) !== 6) {
+        return ['available' => false, 'reason' => 'incomplete'];
+    }
+
+    $contents = [];
+    foreach ($lines as $i => $l) {
+        $contents['knovix_' . $i] = [
+            'key'               => 'knovix_' . $i,
+            'product_id'        => $l['product']->get_id(),
+            'variation_id'      => 0,
+            'variation'         => [],
+            'quantity'          => (int) $l['qty'],
+            'data'              => $l['product'],
+            'data_hash'         => '',
+            'line_tax_data'     => ['subtotal' => [], 'total' => []],
+            'line_subtotal'     => (float) $l['total'],
+            'line_subtotal_tax' => 0,
+            'line_total'        => (float) $l['total'],
+            'line_tax'          => 0,
+        ];
+    }
+
+    $package = [
+        'contents'        => $contents,
+        'contents_cost'   => $subtotal,
+        'applied_coupons' => [],
+        'user'            => ['ID' => 0],
+        'destination'     => [
+            'country' => 'IN', 'state' => $state_code, 'postcode' => $pincode,
+            'city' => '', 'address' => '', 'address_1' => '', 'address_2' => ''
+        ],
+    ];
+    $zone = WC_Shipping_Zones::get_zone_matching_package($package);
+
+    $best = null;
+    foreach ($zone->get_shipping_methods(true) as $method) { // enabled methods only
+        $cost = null;
+
+        if ($method->id === 'free_shipping') {
+            $requires = $method->get_option('requires');
+            if ($requires === '' || $requires === false) {
+                $cost = 0.0;
+            } elseif (in_array($requires, ['min_amount', 'either'], true)
+                      && $subtotal >= (float) $method->get_option('min_amount')) {
+                $cost = 0.0;
+            } // 'coupon' / 'both' need a coupon, which this storefront doesn't support
+
+        } elseif ($method->id !== 'local_pickup') {
+            try {
+                $method->calculate_shipping($package);
+                foreach ((array) $method->rates as $rate) {
+                    $c = (float) $rate->get_cost();
+                    if ($cost === null || $c < $cost) $cost = $c;
+                }
+            } catch (\Throwable $e) {
+                $c = $method->get_option('cost');
+                if (is_numeric($c)) $cost = (float) $c;
+            }
+        }
+
+        if ($cost !== null && ($best === null || $cost < $best)) $best = $cost;
+    }
+
+    if ($best === null) return ['available' => false, 'reason' => 'unavailable'];
+    return ['available' => true, 'shipping' => $best, 'zone' => $zone->get_zone_name()];
+}

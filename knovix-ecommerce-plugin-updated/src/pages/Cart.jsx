@@ -1,4 +1,3 @@
-import { getShipping } from '../utils/shipping'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 
@@ -16,8 +15,6 @@ export default function Cart() {
     )
   }
 
-  const shipping = getShipping(subtotal)
-  const total = subtotal + shipping
 
   return (
     <div className="container-px max-w-5xl mx-auto py-8 grid md:grid-cols-[1fr_320px] gap-8">
@@ -47,8 +44,8 @@ export default function Cart() {
         <h2 className="font-semibold mb-3">Order Summary</h2>
         <div className="text-sm space-y-2">
           <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal}</span></div>
-          <div className="flex justify-between"><span>Shipping</span><span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span></div>
-          <div className="flex justify-between font-semibold text-base border-t pt-2 mt-2"><span>Total</span><span>₹{total}</span></div>
+          <div className="flex justify-between"><span>Shipping</span><span className="text-slate-500">Calculated at checkout</span></div>
+          <div className="flex justify-between font-semibold text-base border-t pt-2 mt-2"><span>Total</span><span>₹{subtotal}</span></div>
         </div>
         <Link to="/checkout" className="btn-primary w-full mt-4">Proceed to Checkout</Link>
       </div>
