@@ -158,7 +158,7 @@ export default function Shop() {
   )?.name
 
   return (
-    <div className="bg-[#f6f4fb] min-h-[60vh]">
+    <div className="bg-brand-50 min-h-[60vh]">
 
     <div className="container-px max-w-7xl mx-auto py-4 md:py-8 grid md:grid-cols-[220px_1fr] gap-4 md:gap-8">
 

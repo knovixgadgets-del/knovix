@@ -63,8 +63,8 @@ h1,h2,h3,h4 { @apply font-display; }
 
 /* Hero: gentle price/badge pulse */
 @keyframes hero-pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(12, 115, 103, 0.35); }
-  100% { box-shadow: 0 0 0 10px rgba(12, 115, 103, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(36, 112, 133, 0.35); }
+  100% { box-shadow: 0 0 0 10px rgba(36, 112, 133, 0); }
 }
 .hero-pulse-ring { animation: hero-pulse-ring 2s ease-out infinite; }
 
@@ -87,3 +87,12 @@ h1,h2,h3,h4 { @apply font-display; }
 /* Hide scrollbar on horizontally scrolling strips (category tabs) */
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Flash sale banner: Knovix peacock mix — deep navy into brand teal, with a
+   soft light bloom and a hint of the gold used for star ratings. */
+.flash-sale-bg {
+  background:
+    radial-gradient(circle at 10% 15%, rgba(82, 174, 199, 0.45), transparent 45%),
+    radial-gradient(circle at 92% 85%, rgba(250, 184, 22, 0.18), transparent 40%),
+    linear-gradient(110deg, #0f2530 0%, #154451 35%, #247085 70%, #328ca4 100%);
+}

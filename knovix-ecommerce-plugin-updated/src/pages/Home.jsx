@@ -24,20 +24,16 @@ function endOfToday() {
 }
 
 function useDealCountdown() {
-  const [target, setTarget] = useState(endOfToday)
-  const [left, setLeft] = useState(() => target - Date.now())
+  const [left, setLeft] = useState(() => endOfToday() - Date.now())
 
   useEffect(() => {
     const t = setInterval(() => {
-      const remaining = target - Date.now()
-      if (remaining <= 0) {
-        setTarget(endOfToday() + 86400000)
-      } else {
-        setLeft(remaining)
-      }
+      // Recompute against *today's* end each tick, so after midnight the
+      // timer restarts at 24h instead of showing an extra day (was 47:59:59).
+      setLeft(endOfToday() - Date.now())
     }, 1000)
     return () => clearInterval(t)
-  }, [target])
+  }, [])
 
   const h = Math.floor(left / 3600000)
   const m = Math.floor((left % 3600000) / 60000)
@@ -259,16 +255,16 @@ export default function Home() {
           horizontally-scrolling row of the catalog's steepest discounts,
           instead of a single static banner. */}
       <section className="container-px max-w-7xl mx-auto py-6">
-        <div className="rounded-xl overflow-hidden bg-gradient-to-r from-orange-500 to-red-600 text-white">
+        <div className="rounded-xl overflow-hidden flash-sale-bg text-white">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3">
             <div>
-              <p className="text-xs font-semibold flex items-center gap-1">⚡ FLASH SALE</p>
+              <p className="inline-flex items-center gap-1 text-[11px] font-bold tracking-wide bg-amber-400 text-ink-900 rounded-full px-2.5 py-0.5">⚡ FLASH SALE</p>
               <h2 className="text-lg sm:text-xl font-bold mt-0.5">Mega Deals on Top Gadgets!</h2>
             </div>
             <div className="flex items-center gap-2 text-xs sm:text-sm">
               <span className="font-medium hidden sm:inline">Deal ends in</span>
               {[['HH', h], ['MM', m], ['SS', s]].map(([label, val]) => (
-                <span key={label} className="bg-black/30 rounded-md px-2.5 py-1.5 min-w-[42px] text-center">
+                <span key={label} className="bg-white/10 ring-1 ring-white/25 backdrop-blur-sm rounded-md px-2.5 py-1.5 min-w-[42px] text-center">
                   <span className="font-bold font-mono text-sm sm:text-base">{String(val).padStart(2, '0')}</span>
                   <span className="block text-[9px] uppercase leading-none mt-0.5">{label}</span>
                 </span>

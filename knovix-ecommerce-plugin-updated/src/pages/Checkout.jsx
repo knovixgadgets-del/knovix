@@ -23,7 +23,8 @@ export default function Checkout() {
 
   const shipping = quote.status === 'ok' ? quote.shipping : 0
   const total = subtotal + shipping
-  const canPlace = quote.status === 'ok' && !placing
+  const phoneOk = form.phone.length === 10
+  const canPlace = quote.status === 'ok' && phoneOk && !placing
 
   let shippingLabel = 'Enter state & pincode'
   if (quote.status === 'loading') shippingLabel = 'Calculating…'
@@ -47,8 +48,16 @@ export default function Checkout() {
         items,
         payment
       })
+      // Flag this as a fresh order so the confirmation page can show the
+      // thank-you + auto-redirect to My Orders (only once, not on later visits).
+      try {
+        sessionStorage.setItem('knovix_just_placed', String(order.id))
+        if (order.orderKey) sessionStorage.setItem(`knovix_order_key_${order.id}`, order.orderKey)
+      } catch { /* storage unavailable — confirmation still works */ }
+      // Navigate first (and replace, so Back doesn't return to checkout),
+      // then empty the cart, so the empty-cart guard can't bounce us to /cart.
+      navigate(`/order-success/${order.id}`, { replace: true })
       clearCart()
-      navigate(`/order-success/${order.id}`)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -68,7 +77,7 @@ export default function Checkout() {
           </div>
           <div>
             <label className="label">Phone Number</label>
-            <input required className="input" value={form.phone} onChange={(e) => update('phone', e.target.value)} />
+            <input required inputMode="tel" maxLength={10} placeholder="10-digit mobile number" className="input" value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/\D/g, ''))} />
           </div>
         </div>
         <div>
@@ -109,10 +118,11 @@ export default function Checkout() {
           </div>
         </div>
 
+        {form.phone.length > 0 && !phoneOk && <p className="text-red-600 text-sm">Enter a valid 10-digit mobile number.</p>}
         {quote.status === 'unavailable' && <p className="text-red-600 text-sm">Sorry, we don't deliver to this location yet.</p>}
         {quote.status === 'mismatch' && <p className="text-red-600 text-sm">This pincode doesn't match the selected state. Please check and try again.</p>}
         {quote.status === 'error' && <p className="text-red-600 text-sm">Couldn't calculate shipping. Please check your connection and retry.</p>}
-        <button disabled={!canPlace} className="btn-primary w-full disabled:opacity-60">{placing ? 'Placing order…' : quote.status === 'ok' ? `Place Order · ₹${total}` : 'Enter state & pincode to continue'}</button>
+        <button disabled={!canPlace} className="btn-primary w-full disabled:opacity-60">{placing ? 'Placing order…' : quote.status === 'ok' ? (phoneOk ? `Place Order · ₹${total}` : 'Enter 10-digit phone to continue') : 'Enter state & pincode to continue'}</button>
       </form>
 
       <div className="card p-5 h-fit">

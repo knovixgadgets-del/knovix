@@ -55,6 +55,10 @@ function knovix_register_order_routes() {
 
             if (empty($items)) return knovix_error('Order must contain at least one item', 400);
 
+            $phone = preg_replace('/\D/', '', (string) ($customer['phone'] ?? ''));
+            if (strlen($phone) === 12 && strpos($phone, '91') === 0) $phone = substr($phone, 2);
+            if (strlen($phone) !== 10) return knovix_error('Please enter a valid 10-digit mobile number.', 400);
+
             // 1) Validate every line and price it server-side BEFORE touching the DB.
             $lines = [];
             $subtotal = 0.0;
@@ -102,7 +106,7 @@ function knovix_register_order_routes() {
             ];
             $order->set_address($addr, 'billing');
             $order->set_address($addr, 'shipping');
-            $order->set_billing_phone(sanitize_text_field($customer['phone'] ?? ''));
+            $order->set_billing_phone($phone);
 
             if (is_user_logged_in()) $order->set_customer_id(get_current_user_id());
 
@@ -122,7 +126,8 @@ function knovix_register_order_routes() {
             $order->set_status('processing'); // COD/UPI/Card all recorded as processing until fulfilled
             $order->save();
 
-            return knovix_format_order($order);
+            // orderKey lets a guest re-open this confirmation later (see GET /orders/:id).
+            return array_merge(knovix_format_order($order), ['orderKey' => $order->get_order_key()]);
         }
     ]);
 
@@ -155,7 +160,12 @@ function knovix_register_order_routes() {
 
             $is_owner = is_user_logged_in() && $order->get_customer_id() === get_current_user_id();
             $is_admin = current_user_can('manage_woocommerce');
-            if ($order->get_customer_id() && !$is_owner && !$is_admin) {
+            // Order IDs are sequential, so without this check anyone could read every
+            // guest customer's name/phone/address by counting up IDs. A guest must
+            // present the order key that was handed out when the order was placed.
+            $key    = (string) $req->get_param('key');
+            $key_ok = $key !== '' && hash_equals((string) $order->get_order_key(), $key);
+            if (!$is_owner && !$is_admin && !$key_ok) {
                 return knovix_error('Not authorized to view this order', 403);
             }
             return knovix_format_order($order);

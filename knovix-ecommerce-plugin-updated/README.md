@@ -246,3 +246,10 @@ src/
 - `/shipping` banner threshold now uses the highest per-zone free-shipping minimum so it never over-promises.
 - Optional pincode/state check: add `define('KNOVIX_VALIDATE_PINCODE_STATE', true);` to wp-config.php (off by default).
 - Remember: every state zone in WooCommerce > Shipping needs a Free Shipping method with minimum order amount 199 for "free above Rs 199" to hold in that zone.
+
+## Latest update
+- Flash sale banner now uses the Knovix peacock mix (deep navy -> brand teal, gold badge) instead of orange/red (`.flash-sale-bg` in `src/index.css`).
+- After placing an order: confirmation + thank-you message, then signed-in customers are auto-redirected to My Orders (`/account`) after 6s, with "Go now" / "Stay here". Guests get a "Log in to track" link (`/account` needs login).
+- Security: `GET /orders/:id` now requires the order key (returned once at checkout) for guests, so order IDs can't be enumerated to read other customers' details. Logged-in owners and admins are unaffected.
+- Fixes: deal countdown showed ~47h after midnight; cart cleared before navigation at checkout; 10-digit phone validation (frontend + backend); COD orders no longer say "Total paid"; leftover purple/old-teal colors replaced with brand colors.
+- dist/ was patched by hand to match src/ - run `npm install && npm run build` to regenerate it cleanly.

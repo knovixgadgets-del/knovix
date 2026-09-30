@@ -16,8 +16,10 @@ export function getOrders(params = {}) {
   return localDb.listOrders(params)
 }
 
-export function getOrder(id) {
-  if (USE_WORDPRESS) return apiFetch(`/orders/${id}`)
+// `key` is the order key returned when the order was placed; it lets a guest
+// (not logged in) re-open their own confirmation without exposing other orders.
+export function getOrder(id, key) {
+  if (USE_WORDPRESS) return apiFetch(`/orders/${id}${key ? `?key=${encodeURIComponent(key)}` : ''}`)
   return localDb.getOrder(id)
 }
 

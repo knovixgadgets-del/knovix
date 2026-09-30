@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { getOrder } from '../api/orders'
 import { CheckCircleIcon, TruckIcon } from '../components/Icons'
 
@@ -24,15 +25,44 @@ function estimatedDelivery(createdAt) {
   return `${fmt(from)} – ${fmt(to)}`
 }
 
+const REDIRECT_SECONDS = 6
+const JUST_PLACED_KEY = 'knovix_just_placed'
+
 export default function OrderSuccess() {
   const { id } = useParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  // True only right after checkout (Checkout sets the flag); opening an old
+  // order from My Orders must NOT bounce the customer back out again.
+  const [justPlaced] = useState(() => {
+    try { return sessionStorage.getItem(JUST_PLACED_KEY) === String(id) } catch { return false }
+  })
+  const [stay, setStay] = useState(false)
+  const [secs, setSecs] = useState(REDIRECT_SECONDS)
+  // Guests can't open /account (it needs login), so only signed-in customers
+  // are auto-redirected to their orders page.
+  const autoRedirect = justPlaced && !!user && !stay
+
+  useEffect(() => {
+    try { sessionStorage.removeItem(JUST_PLACED_KEY) } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => {
+    if (!autoRedirect) return
+    if (secs <= 0) { navigate('/account', { replace: true }); return }
+    const t = setTimeout(() => setSecs((n) => n - 1), 1000)
+    return () => clearTimeout(t)
+  }, [autoRedirect, secs, navigate])
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    getOrder(id)
+    let key = ''
+    try { key = sessionStorage.getItem(`knovix_order_key_${id}`) || '' } catch { /* ignore */ }
+    getOrder(id, key)
       .then((o) => { if (!cancelled) setOrder(o) })
       .catch(() => { if (!cancelled) setOrder(null) })
       .finally(() => { if (!cancelled) setLoading(false) })
@@ -40,7 +70,7 @@ export default function OrderSuccess() {
   }, [id])
 
   return (
-    <div className="bg-[#f6f4fb] min-h-[70vh]">
+    <div className="bg-brand-50 min-h-[70vh]">
       <div className="container-px max-w-3xl mx-auto py-8 sm:py-12">
 
         {/* Header — big confirmation banner, Amazon-style, instead of a
@@ -59,6 +89,35 @@ export default function OrderSuccess() {
             </p>
           </div>
         </div>
+
+        {justPlaced && (
+          <div className="card p-4 mt-4 text-sm">
+            <p className="text-slate-600">
+              We've received your order and will keep you posted at every step. 🎉
+            </p>
+            {autoRedirect ? (
+              <>
+                <div className="h-1.5 rounded-full bg-brand-100 overflow-hidden mt-3">
+                  <div
+                    className="h-full bg-brand-600 transition-all duration-1000 ease-linear"
+                    style={{ width: `${((REDIRECT_SECONDS - secs) / REDIRECT_SECONDS) * 100}%` }}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+                  <p className="text-xs text-slate-500">Taking you to your orders in {secs}s…</p>
+                  <div className="flex gap-3 text-xs font-semibold">
+                    <button type="button" onClick={() => navigate('/account', { replace: true })} className="text-brand-700 hover:underline">Go now</button>
+                    <button type="button" onClick={() => setStay(true)} className="text-slate-500 hover:underline">Stay here</button>
+                  </div>
+                </div>
+              </>
+            ) : !user ? (
+              <p className="text-xs text-slate-500 mt-2">
+                <Link to="/login" state={{ from: { pathname: '/account' } }} className="text-brand-700 font-semibold hover:underline">Log in</Link> with your phone number to track this order in My Orders.
+              </p>
+            ) : null}
+          </div>
+        )}
 
         {loading ? (
           <div className="mt-4 space-y-3">
@@ -122,10 +181,10 @@ export default function OrderSuccess() {
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between"><span className="text-slate-500">Subtotal</span><span>₹{inr(order.subtotal)}</span></div>
                   <div className="flex justify-between"><span className="text-slate-500">Shipping</span><span>{order.shipping === 0 ? 'Free' : `₹${inr(order.shipping)}`}</span></div>
-                  <div className="flex justify-between font-semibold text-base border-t border-slate-100 pt-2 mt-1"><span>Total paid</span><span>₹{inr(order.total)}</span></div>
+                  <div className="flex justify-between font-semibold text-base border-t border-slate-100 pt-2 mt-1"><span>{order.payment === 'cod' ? 'Total to pay' : 'Total paid'}</span><span>₹{inr(order.total)}</span></div>
                 </div>
                 <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-100">
-                  Paid via {paymentLabel[order.payment] || order.payment}
+                  {order.payment === 'cod' ? 'Pay on delivery via ' : 'Paid via '}{paymentLabel[order.payment] || order.payment}
                 </p>
               </div>
             </div>
