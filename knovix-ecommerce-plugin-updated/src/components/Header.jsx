@@ -1,3 +1,4 @@
+import { FREE_SHIPPING_THRESHOLD } from '../utils/shipping'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from '../context/CartContext'
@@ -16,7 +17,7 @@ import {
 } from './Icons'
 
 const promoMessages = [
-  '🚚 Free Shipping on all orders above ₹199',
+  `🚚 Free Shipping on all orders above ₹${FREE_SHIPPING_THRESHOLD}`,
   '🔄 7-Day Easy Replacement',
   '💬 24/7 Customer Support',
   '⚡ Mega Deals Live Now — Shop Today!'

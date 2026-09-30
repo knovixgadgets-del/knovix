@@ -17,6 +17,8 @@ if (!defined('ABSPATH')) {
 */
 
 define('KNOVIX_API_NS', 'knovix/v1');
+define('KNOVIX_FREE_SHIPPING_MIN', 199);
+define('KNOVIX_SHIPPING_FEE', 49);
 
 
 /*

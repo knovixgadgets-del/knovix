@@ -1,3 +1,4 @@
+import { FREE_SHIPPING_THRESHOLD } from '../utils/shipping'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
@@ -6,7 +7,7 @@ import { CategoryIcon } from '../components/Icons'
 import { getCategories, getProducts } from '../api/products'
 
 const perks = [
-  ['🚚', 'Free Shipping Across India', 'On orders above ₹199'],
+  ['🚚', 'Free Shipping Across India', `On orders above ₹${FREE_SHIPPING_THRESHOLD}`],
   ['🔄', '7-Day Easy Replacement', 'For damaged or defective products'],
   ['🛡️', '100% Secure Payments', 'Multiple secure payment options'],
   ['💬', '24/7 Customer Support', "We're here to help anytime, anywhere"]

@@ -38,7 +38,10 @@ function knovix_register_order_routes() {
             $order->set_payment_method($payment);
             $order->set_payment_method_title(strtoupper($payment));
 
-            $shipping = (float) ($req->get_param('shipping') ?: 0);
+            // Shipping is decided here, never trusted from the browser.
+            $free_min = defined('KNOVIX_FREE_SHIPPING_MIN') ? KNOVIX_FREE_SHIPPING_MIN : 199;
+            $fee      = defined('KNOVIX_SHIPPING_FEE') ? KNOVIX_SHIPPING_FEE : 49;
+            $shipping = ((float) $order->get_subtotal() >= $free_min) ? 0 : $fee;
             if ($shipping > 0) {
                 $item = new WC_Order_Item_Shipping();
                 $item->set_method_title('Standard Shipping');

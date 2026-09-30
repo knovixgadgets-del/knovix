@@ -1,3 +1,4 @@
+import { getShipping } from '../utils/shipping'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 
@@ -15,7 +16,7 @@ export default function Cart() {
     )
   }
 
-  const shipping = subtotal >= 499 ? 0 : 49
+  const shipping = getShipping(subtotal)
   const total = subtotal + shipping
 
   return (
