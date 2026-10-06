@@ -1,15 +1,19 @@
 import { useIndianStates, useShippingQuote, useShippingRules } from '../utils/shipping'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { createOrder } from '../api/orders'
+import { CheckCircleIcon } from '../components/Icons'
+
+const POPUP_SECONDS = 6
 
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [placing, setPlacing] = useState(false)
+  const [placed, setPlaced] = useState(null) // order returned by the server -> shows the thank-you popup
   const [error, setError] = useState('')
   const [payment, setPayment] = useState('cod')
   const [form, setForm] = useState({
@@ -20,7 +24,14 @@ export default function Checkout() {
   const quote = useShippingQuote(items, form.state, form.pincode)
   const { freeMin } = useShippingRules()
 
-  if (items.length === 0) return <Navigate to="/cart" replace />
+  // Thank-you popup: after a few seconds, take the customer to My Orders.
+  useEffect(() => {
+    if (!placed) return
+    const t = setTimeout(() => navigate('/account', { replace: true }), POPUP_SECONDS * 1000)
+    return () => clearTimeout(t)
+  }, [placed, navigate])
+
+  if (items.length === 0 && !placed) return <Navigate to="/cart" replace />
 
   // Shipping is only ever charged once the server has priced it for a real
   // state + pincode. The merchandise value is also taken from that same
@@ -55,15 +66,12 @@ export default function Checkout() {
         items,
         payment
       })
-      // Flag this as a fresh order so the confirmation page can show the
-      // thank-you + auto-redirect to My Orders (only once, not on later visits).
       try {
-        sessionStorage.setItem('knovix_just_placed', String(order.id))
         if (order.orderKey) sessionStorage.setItem(`knovix_order_key_${order.id}`, order.orderKey)
-      } catch { /* storage unavailable — confirmation still works */ }
-      // Navigate first (and replace, so Back doesn't return to checkout),
-      // then empty the cart, so the empty-cart guard can't bounce us to /cart.
-      navigate(`/order-success/${order.id}`, { replace: true })
+      } catch { /* storage unavailable — popup still works */ }
+      // Show the thank-you popup (instead of bouncing to the empty cart page),
+      // then empty the cart.
+      setPlaced({ id: order.id, total: order.total ?? total })
       clearCart()
     } catch (err) {
       setError(err.message)
@@ -74,6 +82,29 @@ export default function Checkout() {
 
   return (
     <div className="container-px max-w-5xl mx-auto py-8 grid md:grid-cols-[1fr_320px] gap-8">
+      {placed && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 animate-[fade-in_0.2s_ease-out]" role="dialog" aria-modal="true" aria-label="Order placed">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 text-center hero-in">
+            <span className="mx-auto w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
+              <CheckCircleIcon className="w-10 h-10" />
+            </span>
+            <h2 className="mt-4 text-xl font-bold text-ink-900">Thank you for your order!</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Order <span className="font-mono font-medium text-ink-900">#{placed.id}</span> is confirmed
+              {Number(placed.total) > 0 && <> · ₹{Number(placed.total).toLocaleString('en-IN')}</>}
+            </p>
+            <p className="mt-2 text-sm text-slate-600">We'll keep you posted at every step.</p>
+            <div className="h-1.5 rounded-full bg-brand-100 overflow-hidden mt-4">
+              <div className="h-full bg-amber-400 origin-left" style={{ animation: `popup-progress ${POPUP_SECONDS}s linear forwards` }} />
+            </div>
+            <p className="text-xs text-slate-500 mt-2">Taking you to your orders…</p>
+            <div className="mt-4 flex gap-2">
+              <button type="button" onClick={() => navigate('/account', { replace: true })} className="btn-primary flex-1">View my orders</button>
+              <button type="button" onClick={() => navigate('/shop', { replace: true })} className="btn-outline flex-1">Keep shopping</button>
+            </div>
+          </div>
+        </div>
+      )}
       <form onSubmit={handlePlaceOrder} className="space-y-5">
         <h1 className="text-xl font-bold">Shipping Details</h1>
         {error && <p className="text-red-600 text-sm bg-red-50 rounded-md px-3 py-2">{error}</p>}

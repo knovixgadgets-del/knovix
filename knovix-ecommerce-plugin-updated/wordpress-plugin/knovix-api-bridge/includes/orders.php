@@ -56,7 +56,12 @@ function knovix_register_order_routes() {
     // token if logged in and the order is attached to that account.
     register_rest_route(KNOVIX_API_NS, '/orders', [
         'methods'  => 'POST',
-        'permission_callback' => 'knovix_public_permission',
+        // Only logged-in customers can place an order (also enforced in the storefront).
+        'permission_callback' => function () {
+            return is_user_logged_in()
+                ? true
+                : new WP_Error('knovix_login_required', 'Please log in to place your order.', ['status' => 401]);
+        },
         'callback' => function (WP_REST_Request $req) {
             $customer = $req->get_param('customer') ?: [];
             $items = $req->get_param('items') ?: [];

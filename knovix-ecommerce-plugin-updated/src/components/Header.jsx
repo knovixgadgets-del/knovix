@@ -195,7 +195,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
 
               <button
                 type="button"
-                onClick={() => { setCategory(null); setCatOpen(false) }}
+                onClick={() => { setCategory(null); setCatOpen(false); navigate('/shop') }}
                 className={`w-full text-left px-2.5 py-2 rounded text-sm ${
                   !category ? 'bg-brand-50 text-brand-700 font-medium' : 'hover:bg-slate-50'
                 }`}
@@ -224,7 +224,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
                 <button
                   type="button"
                   key={c.id}
-                  onClick={() => { setCategory(c); setCatOpen(false) }}
+                  onClick={() => { setCategory(c); setCatOpen(false); setMenuOpen(false); navigate(`/shop?category=${c.id}`) }}
                   className={`block w-full text-left px-2.5 py-2 rounded text-sm truncate ${
                     category?.id === c.id ? 'bg-brand-50 text-brand-700 font-medium' : 'hover:bg-slate-50'
                   }`}

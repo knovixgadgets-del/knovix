@@ -127,6 +127,20 @@ export default function HeroCarousel({ slides = [], products = [], loading = fal
 
   return (
     <div className="relative w-full bg-ink-900 text-white overflow-hidden flex flex-col min-h-[75svh] sm:min-h-0">
+      {slides.some((sl) => sl.image) && (
+        <>
+          {slides.map((sl, i) => sl.image && (
+            <img
+              key={sl.id}
+              src={sl.image}
+              alt=""
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === active ? 'opacity-100' : 'opacity-0'}`}
+            />
+          ))}
+          <div className={`pointer-events-none absolute inset-0 bg-ink-900/70 transition-opacity duration-700 ${slides[active]?.image ? 'opacity-100' : 'opacity-0'}`} />
+        </>
+      )}
       <div className="pointer-events-none absolute -right-24 -top-10 w-[26rem] h-[26rem] rounded-full bg-brand-500/25 blur-3xl" />
       <div className="pointer-events-none absolute -left-24 bottom-0 w-72 h-72 rounded-full bg-brand-600/20 blur-3xl" />
 

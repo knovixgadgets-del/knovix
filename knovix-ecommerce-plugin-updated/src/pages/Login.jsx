@@ -121,6 +121,9 @@ export default function Login() {
   return (
     <div className="container-px max-w-sm mx-auto py-16">
       <h1 className="text-xl font-bold text-center">Welcome to Knovix</h1>
+      {location.state?.from?.pathname === '/checkout' && (
+        <p className="text-sm text-center text-brand-700 bg-brand-50 rounded-md px-3 py-2">Please log in to complete your checkout. Your cart is saved.</p>
+      )}
       <p className="text-sm text-slate-500 text-center mt-1">
         {step === 'phone' ? 'Login or sign up with your mobile number' : `Enter the code sent to +91 ${phone}`}
       </p>

@@ -13,9 +13,9 @@ const socials = [
   { icon: WhatsappIcon, label: 'WhatsApp', href: 'https://wa.me/919876543210' }
 ]
 
-export default function Footer() {
+export default function Footer({ flush = false }) {
   return (
-    <footer className="bg-ink-900 text-slate-300 mt-16">
+    <footer className={`bg-ink-900 text-slate-300 ${flush ? 'pb-16 lg:pb-0' : 'mt-16'}`}>
       <div className="container-px max-w-7xl mx-auto py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         <div className="col-span-2 md:col-span-1">
           <span className="text-xl font-extrabold font-display text-white">KNOVIX</span>

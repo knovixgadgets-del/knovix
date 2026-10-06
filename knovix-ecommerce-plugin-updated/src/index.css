@@ -96,3 +96,9 @@ h1,h2,h3,h4 { @apply font-display; }
     radial-gradient(circle at 92% 85%, rgba(250, 184, 22, 0.18), transparent 40%),
     linear-gradient(110deg, #0f2530 0%, #154451 35%, #247085 70%, #328ca4 100%);
 }
+
+/* Checkout thank-you popup progress bar */
+@keyframes popup-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}

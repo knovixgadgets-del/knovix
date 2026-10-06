@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import HeroCarousel from '../components/HeroCarousel'
+import { homeBanners } from '../data/homeBanners'
 import { CategoryIcon } from '../components/Icons'
 import { getCategories, getProducts } from '../api/products'
 
@@ -142,11 +143,7 @@ export default function Home() {
   // Hero slides: the dark "Upgrade Your Everyday Tech" theme, each slide
   // paired with a real catalog product (featured first) and linked to it.
   const heroProducts = (featured.length > 0 ? featured : products).slice(0, 8)
-  const heroSlides = [
-    { id: 'upgrade', eyebrow: 'NEW SEASON. NEW TECH.', title: 'Upgrade Your Everyday', accent: 'Tech.', subtitle: 'Latest gadgets. Premium brands. Performance you can trust.', cta: 'Shop Now', href: '/shop' },
-    { id: 'power', eyebrow: 'SMART ACCESSORIES', title: 'Power Up Your', accent: 'Day.', subtitle: 'Chargers, cables and mobile accessories made for everyday use.', cta: 'Shop Accessories', href: '/shop' },
-    { id: 'trending', eyebrow: 'TRENDING NOW', title: "Gadgets You'll", accent: 'Love.', subtitle: 'Discover smart gadgets, electronics and everyday technology.', cta: 'Shop Best Rated', href: '/shop?sort=rating' }
-  ]
+  const heroSlides = homeBanners
 
   return (
     <div>
@@ -185,6 +182,7 @@ export default function Home() {
         </section>
       </div>
 
+      {(productsLoading || productsError || featured.length > 0) && (
       <section className="container-px max-w-7xl mx-auto py-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg sm:text-xl font-bold">Featured Products</h2>
@@ -201,6 +199,7 @@ export default function Home() {
           </div>
         )}
       </section>
+      )}
 
       {/* Mega Deals — Amazon-style deals rail: a slim countdown ribbon
           (resets every 24h, see useDealCountdown above) followed by a
@@ -244,6 +243,7 @@ export default function Home() {
         </div>
       </section>
 
+      {(productsLoading || productsError || bestSellers.length > 0) && (
       <section className="container-px max-w-7xl mx-auto py-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg sm:text-xl font-bold">Best Sellers</h2>
@@ -260,6 +260,7 @@ export default function Home() {
           </div>
         )}
       </section>
+      )}
 
       <section className="bg-brand-50">
         <div className="container-px max-w-7xl mx-auto py-7 flex flex-wrap items-center justify-between gap-4">
