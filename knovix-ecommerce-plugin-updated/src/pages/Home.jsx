@@ -56,28 +56,32 @@ function ProductGridSkeleton({ count = 5 }) {
   )
 }
 
-// A broken/missing category image used to fall through to the browser's
-// default broken-image icon, which renders at its own intrinsic size and
-// spills text out of the card instead of staying inside the fixed square —
-// this swaps in a clean placeholder the moment the image errors out.
-function CategoryThumb({ image, name, rounded = 'rounded-xl' }) {
+// Dark category tile from the third theme. A broken/missing image swaps to a
+// clean placeholder instead of the browser's default broken-image icon.
+function CategoryTile({ category }) {
   const [errored, setErrored] = useState(false)
-  const showFallback = !image || errored
-
+  const showFallback = !category.image || errored
   return (
-    <div className={`aspect-square ${rounded} overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center`}>
-      {showFallback ? (
-        <CategoryIcon className="w-6 h-6 text-slate-300" />
-      ) : (
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-          loading="lazy"
-          onError={() => setErrored(true)}
-        />
-      )}
-    </div>
+    <Link
+      to={`/shop?category=${category.id}`}
+      className="group block rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-lime-300/40 transition-colors p-3 h-full"
+    >
+      <div className="aspect-[4/5] rounded-xl flex items-center justify-center overflow-hidden">
+        {showFallback ? (
+          <CategoryIcon className="w-10 h-10 text-white/20" />
+        ) : (
+          <img
+            src={category.image}
+            alt={category.name}
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            onError={() => setErrored(true)}
+          />
+        )}
+      </div>
+      <p className="mt-2 text-sm font-semibold text-white truncate">{category.name}</p>
+      <p className="text-[11px] text-slate-400 group-hover:text-lime-300 transition-colors">Shop Now →</p>
+    </Link>
   )
 }
 
@@ -143,95 +147,58 @@ export default function Home() {
     [products]
   )
 
-  // Hero slides: built from real, hyperlinked catalog data — prefer
-  // featured products, falling back to whatever's loaded — instead of
-  // stock/decorative imagery.
+  // Hero slides: the dark "Upgrade Your Everyday Tech" theme, each slide
+  // paired with a real catalog product (featured first) and linked to it.
   const heroSource = (featured.length > 0 ? featured : products).slice(0, 3)
-  const heroSlides = heroSource.map((p, i) => ({
-    id: p.id,
-    href: `/product/${p.id}`,
-    image: p.image,
-    eyebrow: i === 0 ? 'NEW ARRIVALS' : 'FEATURED',
-    title: i === 0 ? 'New Arrivals. Winter Sale.' : p.name,
-    subtitle: i === 0 ? 'Premium gadgets and accessories to upgrade your lifestyle.' : p.description,
-    cta: 'Shop Now'
+  const heroCopy = [
+    { eyebrow: 'NEW SEASON. NEW TECH.', title: 'Upgrade Your Everyday', accent: 'Tech.', subtitle: 'Latest gadgets. Premium brands. Performance you can trust.', cta: 'Shop Now', href: '/shop' },
+    { eyebrow: 'SMART ACCESSORIES', title: 'Power Up Your', accent: 'Day.', subtitle: 'Chargers, cables and mobile accessories made for everyday use.', cta: 'Shop Accessories', href: '/shop' },
+    { eyebrow: 'TRENDING NOW', title: "Gadgets You'll", accent: 'Love.', subtitle: 'Discover smart gadgets, electronics and everyday technology.', cta: 'Shop Best Rated', href: '/shop?sort=rating' }
+  ]
+  const heroSlides = (heroSource.length > 0 ? heroSource : [null, null, null]).map((p, i) => ({
+    id: p ? p.id : `placeholder-${i}`,
+    ...heroCopy[i % heroCopy.length],
+    image: p ? p.image : null,
+    imageAlt: p ? p.name : '',
+    productHref: p ? `/product/${p.id}` : null
   }))
 
   return (
     <div>
-      {/* Real, crawlable heading — the hero carousel below is decorative and
-          only ever renders an <h2>, so the page previously shipped with no
-          <h1> at all. Kept compact since the hero carries the visual weight. */}
-      <section className="container-px max-w-7xl mx-auto pt-4 pb-2">
-        <h1 className="text-lg sm:text-xl font-bold font-display">
-          Knovix – Smart Gadgets. Smarter Living.
-        </h1>
-        <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-          Discover smart gadgets, mobile accessories, electronics, toys and
-          everyday technology at Knovix Gadgets.
-        </p>
-      </section>
+      {/* Visually hidden but still a real, crawlable <h1> for SEO. */}
+      <h1 className="sr-only">Knovix – Smart Gadgets. Smarter Living.</h1>
 
-      {/* Flipkart-style round category strip, sitting right above the
-          banner so shoppers can jump to a category before they even scroll. */}
-      <section className="container-px max-w-7xl mx-auto pb-3">
-        {categoriesError ? (
-          <LoadErrorNotice label="categories" onRetry={loadCategories} />
-        ) : (
-          <div className="flex gap-4 sm:gap-6 overflow-x-auto no-scrollbar">
-            {(categoriesLoading ? Array.from({ length: 8 }) : categories).map((c, i) => (
-              categoriesLoading ? (
-                <div key={i} className="flex flex-col items-center gap-1.5 shrink-0 w-16">
-                  <div className="w-14 h-14 rounded-full bg-slate-100 animate-pulse" />
-                  <div className="h-2.5 w-10 rounded bg-slate-100 animate-pulse" />
+      <div className="bg-[#0a1013]">
+        <HeroCarousel slides={heroSlides} freeMin={freeMin} />
+
+        <section className="container-px max-w-7xl mx-auto pt-2 pb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-white">Shop By Category</h2>
+            <Link to="/shop" className="text-lime-300 text-sm font-medium">View All Categories →</Link>
+          </div>
+
+          {categoriesError ? (
+            <LoadErrorNotice label="categories" onRetry={loadCategories} />
+          ) : categoriesLoading ? (
+            <div className="flex lg:grid lg:grid-cols-6 gap-3 overflow-x-auto no-scrollbar">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="w-36 lg:w-auto shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                  <div className="aspect-[4/5] rounded-xl bg-white/5 animate-pulse" />
+                  <div className="h-3 rounded bg-white/10 animate-pulse mt-3 w-3/4" />
                 </div>
-              ) : (
-                <Link
-                  key={c.id}
-                  to={`/shop?category=${c.id}`}
-                  className="flex flex-col items-center gap-1.5 shrink-0 w-16 text-center group"
-                >
-                  <span className="w-14 h-14 rounded-full overflow-hidden border border-slate-100 group-hover:border-brand-300 transition-colors">
-                    <CategoryThumb image={c.image} name={c.name} rounded="rounded-full" />
-                  </span>
-                  <span className="text-[11px] font-medium leading-tight line-clamp-2">{c.name}</span>
-                </Link>
-              )
-            ))}
-          </div>
-        )}
-      </section>
-
-      <HeroCarousel slides={heroSlides} />
-
-      <section className="container-px max-w-7xl mx-auto py-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg sm:text-xl font-bold">Shop by Category</h2>
-          <Link to="/shop" className="text-brand-700 text-sm font-medium">View all →</Link>
-        </div>
-
-        {categoriesError ? (
-          <LoadErrorNotice label="categories" onRetry={loadCategories} />
-        ) : categoriesLoading ? (
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i}>
-                <div className="aspect-square rounded-xl bg-slate-100 animate-pulse" />
-                <div className="h-3 rounded bg-slate-100 animate-pulse mt-2 w-4/5 mx-auto" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-            {categories.map((c) => (
-              <Link key={c.id} to={`/shop?category=${c.id}`} className="block text-center group w-full min-w-0">
-                <CategoryThumb image={c.image} name={c.name} />
-                <p className="text-xs mt-1.5 font-medium truncate w-full">{c.name}</p>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+              ))}
+            </div>
+          ) : (
+            <div className="flex lg:grid lg:grid-cols-6 gap-3 overflow-x-auto lg:overflow-visible no-scrollbar snap-x lg:[&>*:nth-child(n+7)]:hidden">
+              {categories.slice(0, 12).map((c) => (
+                <div key={c.id} className="w-36 sm:w-44 lg:w-auto shrink-0 snap-start">
+                  <CategoryTile category={c} />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       <section className="container-px max-w-7xl mx-auto py-6">
         <div className="flex items-center justify-between mb-4">

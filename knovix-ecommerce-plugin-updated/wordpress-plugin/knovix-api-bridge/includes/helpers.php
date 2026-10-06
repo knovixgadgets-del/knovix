@@ -385,6 +385,7 @@ function knovix_quote_shipping($subtotal, $state, $pincode, $lines = [], $debug 
     }
     $out = [
         'available'    => true,
+        'subtotal'     => $subtotal,   // server-priced cart value the decision was made on
         'shipping'     => $best,
         'zone'         => $zone->get_zone_name(),
         'method_id'    => $best_id,

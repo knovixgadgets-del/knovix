@@ -4,7 +4,7 @@ import { useWishlist } from '../context/WishlistContext'
 
 const inr = (n) => Number(n || 0).toLocaleString('en-IN')
 
-// Scalloped "68% OFF" badge (orange-red starburst with rounded points),
+// Scalloped "68% OFF" badge (Knovix peacock-teal starburst with rounded points),
 // drawn as one SVG path so it stays crisp at any density.
 function scallopPath(cx, cy, r, bumps = 10, depth = 0.09, steps = 120) {
   const pts = []
@@ -23,8 +23,8 @@ function DiscountBadge({ percent }) {
       <svg viewBox="0 0 48 48" className="absolute inset-0 w-full h-full drop-shadow-sm" aria-hidden="true">
         <defs>
           <linearGradient id="off-badge-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#ff7a3d" />
-            <stop offset="1" stopColor="#f0481f" />
+            <stop offset="0" stopColor="#328ca4" />
+            <stop offset="1" stopColor="#1b596a" />
           </linearGradient>
         </defs>
         <path d={BADGE_PATH} fill="url(#off-badge-grad)" />

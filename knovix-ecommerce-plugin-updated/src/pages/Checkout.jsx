@@ -1,4 +1,4 @@
-import { useIndianStates, useShippingQuote } from '../utils/shipping'
+import { useIndianStates, useShippingQuote, useShippingRules } from '../utils/shipping'
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
@@ -18,11 +18,18 @@ export default function Checkout() {
 
   const states = useIndianStates()
   const quote = useShippingQuote(items, form.state, form.pincode)
+  const { freeMin } = useShippingRules()
 
   if (items.length === 0) return <Navigate to="/cart" replace />
 
+  // Shipping is only ever charged once the server has priced it for a real
+  // state + pincode. The merchandise value is also taken from that same
+  // server quote, so a stale price saved in the cart can't make the on-screen
+  // total disagree with the order that actually gets created.
   const shipping = quote.status === 'ok' ? quote.shipping : 0
-  const total = subtotal + shipping
+  const shownSubtotal = quote.status === 'ok' && quote.subtotal != null ? quote.subtotal : subtotal
+  const total = shownSubtotal + shipping
+  const toFree = quote.status === 'ok' && shipping > 0 && freeMin ? Math.max(0, Math.ceil(freeMin - shownSubtotal)) : 0
   const phoneOk = form.phone.length === 10
   const canPlace = quote.status === 'ok' && phoneOk && !placing
 
@@ -136,9 +143,10 @@ export default function Checkout() {
           ))}
         </div>
         <div className="text-sm space-y-2 border-t mt-3 pt-3">
-          <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal}</span></div>
-          <div className="flex justify-between"><span>Shipping</span><span>{shippingLabel}</span></div>
-          <div className="flex justify-between font-semibold text-base border-t pt-2"><span>Total</span><span>₹{total}</span></div>
+          <div className="flex justify-between"><span>Subtotal</span><span>₹{shownSubtotal}</span></div>
+          <div className="flex justify-between"><span>Shipping</span><span className={quote.status === 'ok' && shipping === 0 ? 'text-emerald-600 font-medium' : ''}>{shippingLabel}</span></div>
+          {toFree > 0 && <p className="text-xs text-brand-700 bg-brand-50 rounded-md px-2.5 py-1.5">Add ₹{toFree} more to get free delivery</p>}
+          <div className="flex justify-between font-semibold text-base border-t pt-2"><span>Total</span><span>{quote.status === 'ok' ? `₹${total}` : `₹${shownSubtotal}`}</span></div>
         </div>
       </div>
     </div>

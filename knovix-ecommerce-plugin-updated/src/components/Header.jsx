@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { useAuth } from '../context/AuthContext'
 import { getCategories } from '../api/products'
-import { navLinks, quickLinks } from '../data/navLinks'
+import { navLinks } from '../data/navLinks'
 import {
   CameraIcon,
   SearchIcon,
@@ -13,7 +13,9 @@ import {
   AccountIcon,
   CartIcon,
   CategoryIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  MenuIcon,
+  ChevronRightIcon
 } from './Icons'
 
 const promoTail = [
@@ -22,23 +24,10 @@ const promoTail = [
   '⚡ Mega Deals Live Now — Shop Today!'
 ]
 
-// Deals / New Arrivals / Brands carry a sort or path, not a plain route, so
-// react-router's own NavLink active-matching won't catch them — this checks
-// the current location against each link's own query/path instead.
-function isQuickLinkActive(link, location) {
-  const [path, query = ''] = link.to.split('?')
-  if (location.pathname !== path) return false
-  if (!query) return true
-  const want = new URLSearchParams(query)
-  const have = new URLSearchParams(location.search)
-  for (const [key, value] of want) {
-    if (have.get(key) !== value) return false
-  }
-  return true
-}
-
 export default function Header({ menuOpen, setMenuOpen }) {
   const location = useLocation()
+  const [allOpen, setAllOpen] = useState(false)
+  const allRef = useRef(null)
   const { freeMin } = useShippingRules()
   const promoMessages = freeMin ? [`🚚 Free Shipping on all orders above ₹${freeMin}`, ...promoTail] : promoTail
   const { count } = useCart()
@@ -65,9 +54,13 @@ export default function Header({ menuOpen, setMenuOpen }) {
     loadCategories()
   }, [])
 
+  // Close the "All" menu whenever the page changes
+  useEffect(() => { setAllOpen(false) }, [location.pathname, location.search])
+
   useEffect(() => {
     function onClickOutside(e) {
       if (catRef.current && !catRef.current.contains(e.target)) setCatOpen(false)
+      if (allRef.current && !allRef.current.contains(e.target)) setAllOpen(false)
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
@@ -149,9 +142,9 @@ export default function Header({ menuOpen, setMenuOpen }) {
             non-clipping wrapper. */}
         <form
           onSubmit={onSearch}
-          className="relative flex-1 min-w-0 sm:max-w-xl"
+          className="relative flex-1 min-w-0 lg:max-w-3xl"
         >
-          <div className="flex items-stretch h-11 rounded-xl border border-slate-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-brand-400 focus-within:border-brand-400 shadow-card">
+          <div className="flex items-stretch h-11 rounded-lg border-2 border-brand-600 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-brand-300 shadow-card">
             <div className="shrink-0" ref={catRef}>
               <button
                 type="button"
@@ -171,7 +164,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder='Search for "Mobile charger"'
+              placeholder="Mobile charger"
               className="flex-1 min-w-0 h-full px-3 text-sm focus:outline-none"
             />
 
@@ -188,7 +181,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
             <button
               type="submit"
               aria-label="Search"
-              className="flex items-center justify-center w-11 shrink-0 bg-brand-600 hover:bg-brand-700 text-white"
+              className="flex items-center justify-center w-12 shrink-0 bg-brand-600 hover:bg-brand-700 text-white"
             >
               <SearchIcon className="w-[18px] h-[18px]" />
             </button>
@@ -265,172 +258,165 @@ export default function Header({ menuOpen, setMenuOpen }) {
         />
 
         {/* Header actions (desktop only — mobile uses the bottom nav +
-            menu sheet for these) */}
-        <div className="hidden lg:flex items-center gap-5 ml-auto text-sm shrink-0">
+            menu sheet for these). Amazon-style two-line blocks. */}
+        <div className="hidden lg:flex items-center gap-1 ml-auto text-sm shrink-0">
+
+          {/* Account & lists */}
+          <div className="relative group">
+            <button
+              type="button"
+              className="flex flex-col items-start leading-tight px-2.5 py-1.5 rounded-md hover:bg-slate-100 text-left"
+            >
+              <span className="text-[11px] text-slate-500">
+                Hello, {user ? user.name?.split(' ')[0] || 'there' : 'sign in'}
+              </span>
+              <span className="text-sm font-semibold text-ink-900 flex items-center gap-1">
+                Account <ChevronDownIcon className="w-3 h-3 text-slate-400" />
+              </span>
+            </button>
+
+            <div className="absolute right-0 top-full pt-1 w-48 hidden group-hover:block z-50">
+              <div className="bg-white card p-2">
+                {user ? (
+                  <>
+                    <Link to="/account" className="block px-2 py-1.5 rounded hover:bg-slate-50 text-sm">My Orders</Link>
+                    {isAdmin && (
+                      <Link to="/admin" className="block px-2 py-1.5 rounded hover:bg-slate-50 text-sm">Admin Panel</Link>
+                    )}
+                    <button type="button" onClick={logout} className="w-full text-left px-2 py-1.5 rounded hover:bg-slate-50 text-sm text-red-600">
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" className="block px-2 py-1.5 rounded bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold text-center">Sign in</Link>
+                    <Link to="/signup" className="block px-2 py-1.5 mt-1 rounded hover:bg-slate-50 text-sm text-center">New customer? Sign up</Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Returns & orders */}
+          <Link
+            to={user ? '/account' : '/login'}
+            className="flex flex-col items-start leading-tight px-2.5 py-1.5 rounded-md hover:bg-slate-100"
+          >
+            <span className="text-[11px] text-slate-500">Returns</span>
+            <span className="text-sm font-semibold text-ink-900">& Orders</span>
+          </Link>
 
           {/* Wishlist */}
           <Link
             to="/wishlist"
-            className="flex flex-col items-center text-slate-600 hover:text-brand-700"
+            className="relative flex flex-col items-center px-2.5 py-1.5 rounded-md hover:bg-slate-100 text-ink-900"
+            aria-label="Wishlist"
           >
             <span className="relative">
-              <HeartIcon className="w-5 h-5" />
+              <HeartIcon className="w-6 h-6" />
               {wishCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-brand-600 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-brand-600 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
                   {wishCount}
                 </span>
               )}
             </span>
-
-            <span className="text-xs mt-0.5">
-              Wishlist
-            </span>
+            <span className="text-[11px] font-semibold">Wishlist</span>
           </Link>
-
-          {/* Account */}
-          <div className="relative group">
-
-            <button
-              type="button"
-              className="flex flex-col items-center text-slate-600 hover:text-brand-700"
-            >
-              <AccountIcon className="w-5 h-5" />
-
-              <span className="text-xs mt-0.5">
-                {user
-                  ? user.name?.split(' ')[0] || 'Account'
-                  : 'Account'}
-              </span>
-            </button>
-
-            <div className="absolute right-0 mt-1 w-44 bg-white card p-2 hidden group-hover:block">
-
-              {user ? (
-                <>
-                  <Link
-                    to="/account"
-                    className="block px-2 py-1.5 rounded hover:bg-slate-50 text-sm"
-                  >
-                    My Orders
-                  </Link>
-
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      className="block px-2 py-1.5 rounded hover:bg-slate-50 text-sm"
-                    >
-                      Admin Panel
-                    </Link>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="w-full text-left px-2 py-1.5 rounded hover:bg-slate-50 text-sm text-red-600"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="block px-2 py-1.5 rounded hover:bg-slate-50 text-sm"
-                  >
-                    Login
-                  </Link>
-
-                  <Link
-                    to="/signup"
-                    className="block px-2 py-1.5 rounded hover:bg-slate-50 text-sm"
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              )}
-
-            </div>
-          </div>
 
           {/* Cart */}
           <Link
             to="/cart"
-            className="relative flex flex-col items-center text-slate-600 hover:text-brand-700"
+            className="relative flex items-end gap-1 px-2.5 py-1.5 rounded-md hover:bg-slate-100 text-ink-900"
+            aria-label="Cart"
           >
-            <CartIcon className="w-5 h-5" />
-
-            <span className="text-xs mt-0.5">
-              Cart
-            </span>
-
-            {count > 0 && (
-              <span className="absolute -top-1 -right-2 bg-brand-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="relative">
+              <CartIcon className="w-7 h-7" />
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-brand-700 text-sm font-bold leading-none">
                 {count}
               </span>
-            )}
+            </span>
+            <span className="text-sm font-semibold pb-0.5">Cart</span>
           </Link>
 
         </div>
       </div>
 
-      {/* Quick category chips (mobile only) — sit directly under the
-          header row that now holds the search bar, instead of under a
-          second separate search row */}
-      <div className="lg:hidden container-px max-w-7xl mx-auto pb-2.5">
-        <nav className="flex flex-wrap items-center gap-2">
-          {quickLinks.map((l) => {
-            const active = isQuickLinkActive(l, location)
-            return (
-              <Link
-                key={l.label}
-                to={l.to}
-                className={`relative inline-flex items-center gap-1.5 rounded-full px-3 pt-1 pb-1.5 text-xs font-medium border transition-colors ${
-                  active
-                    ? 'bg-brand-50 text-brand-700 border-brand-200'
-                    : 'bg-slate-50 hover:bg-brand-50 text-slate-700 hover:text-brand-700 border-slate-200'
-                }`}
-              >
-                <span>{l.icon}</span>
-                {l.label}
-                {active && (
-                  <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] w-6 rounded-full bg-brand-600" />
+      {/* Amazon-style secondary strip: "All" categories menu + links.
+          Horizontally scrollable on mobile, full row on desktop. */}
+      <div className="bg-ink-800 text-white">
+        <div className="container-px max-w-7xl mx-auto flex items-center gap-1 sm:gap-2 text-[13px] sm:text-sm">
+
+          <div className="relative shrink-0" ref={allRef}>
+            <button
+              type="button"
+              onClick={() => setAllOpen((v) => !v)}
+              aria-expanded={allOpen}
+              className="flex items-center gap-1.5 font-semibold px-2.5 py-2 my-1 rounded border border-transparent hover:border-white/70"
+            >
+              <MenuIcon className="w-4 h-4" />
+              All
+            </button>
+
+            {allOpen && (
+              <div className="absolute left-0 top-full mt-0 w-64 max-w-[calc(100vw-1.5rem)] bg-white text-ink-900 card p-1.5 z-50 max-h-[70vh] overflow-auto">
+                <p className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Shop by Category</p>
+                {categoriesError && (
+                  <div className="px-2.5 py-2 text-sm text-slate-500 flex items-center justify-between gap-2">
+                    <span>Couldn't load categories.</span>
+                    <button type="button" onClick={loadCategories} className="text-brand-700 font-medium shrink-0">Retry</button>
+                  </div>
                 )}
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
+                {!categoriesError && categories.length === 0 && (
+                  <div className="px-2.5 py-1.5 space-y-1.5">
+                    {[0, 1, 2].map((i) => <div key={i} className="h-6 rounded bg-slate-100 animate-pulse" />)}
+                  </div>
+                )}
+                {categories.map((c) => (
+                  <Link
+                    key={c.id}
+                    to={`/shop?category=${c.id}`}
+                    className="flex items-center justify-between px-2.5 py-2 rounded text-sm hover:bg-brand-50 hover:text-brand-700"
+                  >
+                    <span className="truncate">{c.name}</span>
+                    <ChevronRightIcon className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                  </Link>
+                ))}
+                <Link
+                  to="/shop"
+                  className="block px-2.5 py-2 rounded text-sm font-semibold text-brand-700 border-t border-slate-100 mt-1 pt-2.5 hover:bg-brand-50"
+                >
+                  View All Products →
+                </Link>
+              </div>
+            )}
+          </div>
 
-      {/* Desktop navigation */}
-      <nav className="hidden lg:block border-t border-slate-100">
-        <div className="container-px max-w-7xl mx-auto flex items-center gap-6 py-2 text-sm font-medium">
-
-          {navLinks.map((l) => {
-            const highlighted = ['Deals', 'New Arrivals', 'Brands'].includes(l.label)
-            const active = highlighted && isQuickLinkActive(l, location)
-            return (
+          <nav className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto no-scrollbar min-w-0">
+            {navLinks.map((l) => (
               <NavLink
                 key={l.label}
                 to={l.to}
+                end={l.to === '/'}
                 className={({ isActive }) =>
-                  `relative pb-1 ${
-                    isActive || active
-                      ? 'text-brand-700'
-                      : 'text-slate-700 hover:text-brand-700'
+                  `shrink-0 px-2.5 py-2 my-1 rounded border whitespace-nowrap ${
+                    isActive && !l.to.includes('?')
+                      ? 'border-transparent font-semibold bg-white/10 shadow-[inset_0_-2px_0_#52aec7]'
+                      : 'border-transparent hover:border-white/70'
                   }`
                 }
-                end={l.to === '/'}
               >
                 {l.label}
-                {active && (
-                  <span className="absolute -bottom-0.5 left-0 right-0 h-[2px] rounded-full bg-brand-600" />
-                )}
               </NavLink>
-            )
-          })}
+            ))}
+          </nav>
 
+          {freeMin ? (
+            <p className="hidden xl:block ml-auto shrink-0 text-xs text-brand-200 font-medium pl-4">
+              🚚 Free delivery above ₹{freeMin}
+            </p>
+          ) : null}
         </div>
-      </nav>
+      </div>
 
     </header>
   )

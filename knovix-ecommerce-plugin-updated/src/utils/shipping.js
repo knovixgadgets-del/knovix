@@ -77,7 +77,7 @@ export function useShippingQuote(items, state, pincode) {
       })
         .then((r) => {
           if (!alive) return
-          if (r && r.available) setQuote({ status: 'ok', shipping: Number(r.shipping), zone: r.zone })
+          if (r && r.available) setQuote({ status: 'ok', shipping: Number(r.shipping), zone: r.zone, subtotal: Number.isFinite(Number(r.subtotal)) ? Number(r.subtotal) : null })
           else setQuote({ status: r && (r.reason === 'unavailable' || r.reason === 'mismatch') ? r.reason : 'incomplete' })
         })
         .catch(() => alive && setQuote({ status: 'error' }))

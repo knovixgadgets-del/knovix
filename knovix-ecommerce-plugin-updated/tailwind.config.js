@@ -26,6 +26,7 @@ export default {
       },
       fontFamily: {
         display: ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        script: ['Caveat', 'cursive'],
         body: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
       },
       boxShadow: {
