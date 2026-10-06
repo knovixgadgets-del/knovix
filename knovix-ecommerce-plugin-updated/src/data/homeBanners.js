@@ -48,7 +48,7 @@ export const homeBanners = [
     subtitle: 'Latest gadgets. Premium brands. Performance you can trust.',
     cta: 'Shop Now',
     href: '/shop',
-    image: '/banners/6530.jpg',
+    image: './banners/knovix-banner-1.jpg',
     theme: 'default'
   },
   {
@@ -59,7 +59,7 @@ export const homeBanners = [
     subtitle: 'Chargers, cables and mobile accessories made for everyday use.',
     cta: 'Shop Accessories',
     href: '/shop',
-    image: '/banners/5177315.jpg',
+    image: './banners/knovix-banner-2.jpg',
     theme: 'bold'
   },
   {
@@ -70,7 +70,7 @@ export const homeBanners = [
     subtitle: 'Discover smart gadgets, electronics and everyday technology.',
     cta: 'Shop Best Rated',
     href: '/shop?sort=rating',
-    image: '/banners/FP-01-01.jpg',
+    image: './banners/knovix-banner-3.jpg',
     theme: 'default'
   }
 ]
