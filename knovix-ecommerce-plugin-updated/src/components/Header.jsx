@@ -343,7 +343,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
 
       {/* Amazon-style secondary strip: "All" categories menu + links.
           Horizontally scrollable on mobile, full row on desktop. */}
-      <div className="bg-ink-800 text-white">
+      <div className="hidden lg:block bg-ink-800 text-white">
         <div className="container-px max-w-7xl mx-auto flex items-center gap-1 sm:gap-2 text-[13px] sm:text-sm">
 
           <div className="relative shrink-0" ref={allRef}>

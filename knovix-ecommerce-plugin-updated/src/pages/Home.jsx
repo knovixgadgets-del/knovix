@@ -6,13 +6,6 @@ import HeroCarousel from '../components/HeroCarousel'
 import { CategoryIcon } from '../components/Icons'
 import { getCategories, getProducts } from '../api/products'
 
-const buildPerks = (freeMin) => [
-  ['🚚', 'Free Shipping Across India', freeMin ? `On orders above ₹${freeMin}` : 'On eligible orders'],
-  ['🔄', '7-Day Easy Replacement', 'For damaged or defective products'],
-  ['🛡️', '100% Secure Payments', 'Multiple secure payment options'],
-  ['💬', '24/7 Customer Support', "We're here to help anytime, anywhere"]
-]
-
 // Amazon-style single-day deal cycle: the countdown always shows how much
 // of *today* is left (hours/minutes/seconds only, no "days"), and quietly
 // rolls over to a fresh 24h window at midnight — same behavior as Amazon's
@@ -64,7 +57,7 @@ function CategoryTile({ category }) {
   return (
     <Link
       to={`/shop?category=${category.id}`}
-      className="group block rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-lime-300/40 transition-colors p-3 h-full"
+      className="group block rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-amber-400/50 transition-colors p-3 h-full"
     >
       <div className="aspect-[4/5] rounded-xl flex items-center justify-center overflow-hidden">
         {showFallback ? (
@@ -80,7 +73,7 @@ function CategoryTile({ category }) {
         )}
       </div>
       <p className="mt-2 text-sm font-semibold text-white truncate">{category.name}</p>
-      <p className="text-[11px] text-slate-400 group-hover:text-lime-300 transition-colors">Shop Now →</p>
+      <p className="text-[11px] text-slate-400 group-hover:text-amber-400 transition-colors">Shop Now →</p>
     </Link>
   )
 }
@@ -98,7 +91,6 @@ function LoadErrorNotice({ onRetry, label }) {
 
 export default function Home() {
   const { freeMin } = useShippingRules()
-  const perks = buildPerks(freeMin)
   const [categories, setCategories] = useState([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [categoriesError, setCategoriesError] = useState(false)
@@ -149,32 +141,25 @@ export default function Home() {
 
   // Hero slides: the dark "Upgrade Your Everyday Tech" theme, each slide
   // paired with a real catalog product (featured first) and linked to it.
-  const heroSource = (featured.length > 0 ? featured : products).slice(0, 3)
-  const heroCopy = [
-    { eyebrow: 'NEW SEASON. NEW TECH.', title: 'Upgrade Your Everyday', accent: 'Tech.', subtitle: 'Latest gadgets. Premium brands. Performance you can trust.', cta: 'Shop Now', href: '/shop' },
-    { eyebrow: 'SMART ACCESSORIES', title: 'Power Up Your', accent: 'Day.', subtitle: 'Chargers, cables and mobile accessories made for everyday use.', cta: 'Shop Accessories', href: '/shop' },
-    { eyebrow: 'TRENDING NOW', title: "Gadgets You'll", accent: 'Love.', subtitle: 'Discover smart gadgets, electronics and everyday technology.', cta: 'Shop Best Rated', href: '/shop?sort=rating' }
+  const heroProducts = (featured.length > 0 ? featured : products).slice(0, 8)
+  const heroSlides = [
+    { id: 'upgrade', eyebrow: 'NEW SEASON. NEW TECH.', title: 'Upgrade Your Everyday', accent: 'Tech.', subtitle: 'Latest gadgets. Premium brands. Performance you can trust.', cta: 'Shop Now', href: '/shop' },
+    { id: 'power', eyebrow: 'SMART ACCESSORIES', title: 'Power Up Your', accent: 'Day.', subtitle: 'Chargers, cables and mobile accessories made for everyday use.', cta: 'Shop Accessories', href: '/shop' },
+    { id: 'trending', eyebrow: 'TRENDING NOW', title: "Gadgets You'll", accent: 'Love.', subtitle: 'Discover smart gadgets, electronics and everyday technology.', cta: 'Shop Best Rated', href: '/shop?sort=rating' }
   ]
-  const heroSlides = (heroSource.length > 0 ? heroSource : [null, null, null]).map((p, i) => ({
-    id: p ? p.id : `placeholder-${i}`,
-    ...heroCopy[i % heroCopy.length],
-    image: p ? p.image : null,
-    imageAlt: p ? p.name : '',
-    productHref: p ? `/product/${p.id}` : null
-  }))
 
   return (
     <div>
       {/* Visually hidden but still a real, crawlable <h1> for SEO. */}
       <h1 className="sr-only">Knovix – Smart Gadgets. Smarter Living.</h1>
 
-      <div className="bg-[#0a1013]">
-        <HeroCarousel slides={heroSlides} freeMin={freeMin} />
+      <div className="bg-ink-900">
+        <HeroCarousel slides={heroSlides} products={heroProducts} loading={productsLoading} freeMin={freeMin} />
 
         <section className="container-px max-w-7xl mx-auto pt-2 pb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg sm:text-xl font-bold text-white">Shop By Category</h2>
-            <Link to="/shop" className="text-lime-300 text-sm font-medium">View All Categories →</Link>
+            <Link to="/shop" className="text-amber-400 text-sm font-medium">View All Categories →</Link>
           </div>
 
           {categoriesError ? (
@@ -289,24 +274,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trust-badge strip — kept as the very last section of the page so
-          it sits directly above the global footer, the way Amazon places
-          its shipping/returns/payment/support reassurance band. */}
-      <section className="bg-slate-50 border-t border-slate-100">
-        <div className="container-px max-w-7xl mx-auto py-8 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4 md:divide-x md:divide-slate-200">
-          {perks.map(([icon, title, desc]) => (
-            <div key={title} className="flex flex-col items-center text-center gap-2 px-2 md:px-4">
-              <span className="w-12 h-12 rounded-full bg-white shadow-card flex items-center justify-center text-2xl">
-                {icon}
-              </span>
-              <div>
-                <p className="font-semibold text-sm">{title}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   )
 }
