@@ -16,11 +16,16 @@
 //   image    : full-width background picture. Put the file in public/banners/
 //              and write '/banners/my-banner.jpg'  (about 1600x700 works best).
 //              Leave '' for the plain Knovix navy background.
+//              Pictures always fill the banner (cover) and stay centred.
+//   imagePosition : OPTIONAL, which part of the picture stays visible when
+//              cropped on phones, e.g. 'center top', 'left center', '70% 50%'.
+//              Default is 'center center'. Add it inside any banner { ... }.
 //              The 3 banners below use DUMMY pictures — replace them.
 //
 //  LOOK (optional)
 //   theme    : name of a text style from src/styles/banner.css
-//              'default' | 'bold' | 'light' | 'center'
+//              'default' | 'bold' | 'light' | 'center' | 'left'
+//              (text is centred by default; use 'left' for left-aligned)
 //              (add your own by copying a  .hb-theme-xxx  block in banner.css)
 //
 //  HOW TO ADD A BANNER: copy one { ... }, paste it after a comma, give it a

@@ -136,7 +136,8 @@ export default function HeroCarousel({ slides = [], products = [], loading = fal
               src={sl.image}
               alt=""
               aria-hidden="true"
-              className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === active ? 'opacity-100' : 'opacity-0'}`}
+              style={{ objectPosition: sl.imagePosition || 'center center' }}
+              className={`pointer-events-none absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${i === active ? 'opacity-100' : 'opacity-0'}`}
             />
           ))}
           <div className={`hb-overlay pointer-events-none absolute inset-0 transition-opacity duration-700 ${slides[active]?.image ? 'opacity-100' : 'opacity-0'}`} />
@@ -195,7 +196,7 @@ export default function HeroCarousel({ slides = [], products = [], loading = fal
           </div>
 
           {count > 1 && (
-            <div className="mt-5 flex items-center gap-1.5">
+            <div className="hb-dots mt-5 flex items-center gap-1.5">
               {slides.map((slide, i) => (
                 <button
                   key={slide.id}

@@ -50,8 +50,10 @@
   /* ── picture overlay (darkens the picture so text stays readable) ── */
   --hb-overlay: rgba(15, 37, 48, 0.62);   /* 0 = clear, 1 = solid */
 
-  /* ── text alignment: left | center ── */
-  --hb-align: left;
+  /* ── text alignment: center | left ── */
+  --hb-align: center;
+  --hb-sub-margin: auto;          /* auto = centred, 0 = left */
+  --hb-dots-justify: center;      /* center | flex-start */
 }
 
 /* ─── the rules that use the values above (usually no need to edit) ─── */
@@ -102,6 +104,7 @@
 .hb-overlay { background: var(--hb-overlay); }
 .hb-slide { text-align: var(--hb-align); }
 .hb-slide .hb-subtitle { margin-inline: var(--hb-sub-margin, 0); }
+.hb-dots { justify-content: var(--hb-dots-justify, center); }
 
 @media (min-width: 640px) {
   .hb-eyebrow { font-size: var(--hb-eyebrow-size-lg); }
@@ -142,8 +145,16 @@
   --hb-overlay: rgba(255, 255, 255, 0.45);
 }
 
-/* 'center' → everything centred */
+/* 'center' → everything centred (this is already the default) */
 .hb-theme-center {
   --hb-align: center;
   --hb-sub-margin: auto;
+  --hb-dots-justify: center;
+}
+
+/* 'left' → left-aligned text */
+.hb-theme-left {
+  --hb-align: left;
+  --hb-sub-margin: 0;
+  --hb-dots-justify: flex-start;
 }
