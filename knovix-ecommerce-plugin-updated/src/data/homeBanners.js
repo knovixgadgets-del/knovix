@@ -43,7 +43,7 @@ export const homeBanners = [
     subtitle: 'Latest gadgets. Premium brands. Performance you can trust.',
     cta: 'Shop Now',
     href: '/shop',
-    image: '/banners/dummy-banner-1.svg',
+    image: '/banners/6530.jpg',
     theme: 'default'
   },
   {
@@ -54,7 +54,7 @@ export const homeBanners = [
     subtitle: 'Chargers, cables and mobile accessories made for everyday use.',
     cta: 'Shop Accessories',
     href: '/shop',
-    image: '/banners/dummy-banner-2.svg',
+    image: '/banners/5177315.jpg',
     theme: 'bold'
   },
   {
@@ -65,7 +65,7 @@ export const homeBanners = [
     subtitle: 'Discover smart gadgets, electronics and everyday technology.',
     cta: 'Shop Best Rated',
     href: '/shop?sort=rating',
-    image: '/banners/dummy-banner-3.svg',
+    image: '/banners/FP-01-01.jpg',
     theme: 'default'
   }
 ]
