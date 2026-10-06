@@ -17,7 +17,7 @@
   /* ── main heading ── */
   --hb-title-color: #ffffff;
   --hb-title-font: 'Poppins', system-ui, sans-serif;
-  --hb-title-size: 32px;              /* mobile */
+  --hb-title-size: 26px;              /* mobile */
   --hb-title-size-md: 48px;           /* tablet */
   --hb-title-size-lg: 60px;           /* desktop */
   --hb-title-weight: 600;
@@ -26,7 +26,7 @@
   /* ── accent word (e.g. "Tech.") ── */
   --hb-accent-color: #fab816;
   --hb-accent-font: 'Caveat', cursive;
-  --hb-accent-size: 42px;             /* mobile */
+  --hb-accent-size: 34px;             /* mobile */
   --hb-accent-size-md: 60px;
   --hb-accent-size-lg: 72px;
   --hb-accent-weight: 700;
@@ -46,6 +46,15 @@
   --hb-btn-radius: 999px;             /* 999px = pill, 8px = rounded box */
   --hb-btn-pad-y: 12px;
   --hb-btn-pad-x: 26px;
+
+  /* ── banner BOX size (picture always covers it, centred) ── */
+  --hb-height: 210px;                 /* mobile */
+  --hb-height-md: 300px;              /* tablet */
+  --hb-height-lg: 380px;              /* desktop */
+
+  /* ── pill dots under the banner ── */
+  --hb-dash-color: #c3d0d6;
+  --hb-dash-active: #0f2530;
 
   /* ── picture overlay (darkens the picture so text stays readable) ── */
   --hb-overlay: rgba(15, 37, 48, 0.62);   /* 0 = clear, 1 = solid */
@@ -158,3 +167,23 @@
   --hb-sub-margin: 0;
   --hb-dots-justify: flex-start;
 }
+
+
+/* ─── banner box + pill progress dots ─── */
+.hb-frame { height: var(--hb-height); }
+@media (min-width: 640px)  { .hb-frame { height: var(--hb-height-md); } }
+@media (min-width: 1024px) { .hb-frame { height: var(--hb-height-lg); } }
+
+.hb-dots { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+.hb-dash {
+  height: 4px; width: 28px; border-radius: 999px; overflow: hidden;
+  background: var(--hb-dash-color); transition: width 0.3s ease;
+}
+.hb-dash.is-active { width: 72px; }
+.hb-dash-fill { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--hb-dash-active); }
+.hb-dash.is-active .hb-dash-fill {
+  animation: hb-fill var(--hb-ms, 4500ms) linear forwards;
+  animation-play-state: var(--hb-play, running);
+}
+@keyframes hb-fill { to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .hb-dash.is-active .hb-dash-fill { animation: none; width: 100%; } }

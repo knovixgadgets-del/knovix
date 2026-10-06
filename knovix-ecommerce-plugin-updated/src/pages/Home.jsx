@@ -2,9 +2,14 @@ import { useShippingRules } from '../utils/shipping'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import HeroCarousel from '../components/HeroCarousel'
+import HomeBannerSlider from '../components/HomeBannerSlider'
+import CategoryTabs from '../components/CategoryTabs'
+import MiniProductRail from '../components/MiniProductRail'
 import { homeBanners } from '../data/homeBanners'
-import { CategoryIcon } from '../components/Icons'
+import { homeShow, categoryTabs, trustBadges, lookingRail, promoTiles } from '../data/homeContent'
+import { useAuth } from '../context/AuthContext'
+import { CategoryIcon, TruckIcon, PhoneIcon, BoxIcon, CheckCircleIcon } from '../components/Icons'
+import '../styles/home.css'
 import { getCategories, getProducts } from '../api/products'
 
 // Amazon-style single-day deal cycle: the countdown always shows how much
@@ -58,11 +63,11 @@ function CategoryTile({ category }) {
   return (
     <Link
       to={`/shop?category=${category.id}`}
-      className="group block rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-amber-400/50 transition-colors p-3 h-full"
+      className="group block rounded-2xl border border-slate-200 bg-white hover:border-brand-400 hover:shadow-card transition p-3 h-full"
     >
       <div className="aspect-[4/5] rounded-xl flex items-center justify-center overflow-hidden">
         {showFallback ? (
-          <CategoryIcon className="w-10 h-10 text-white/20" />
+          <CategoryIcon className="w-10 h-10 text-slate-300" />
         ) : (
           <img
             src={category.image}
@@ -73,8 +78,8 @@ function CategoryTile({ category }) {
           />
         )}
       </div>
-      <p className="mt-2 text-sm font-semibold text-white truncate">{category.name}</p>
-      <p className="text-[11px] text-slate-400 group-hover:text-amber-400 transition-colors">Shop Now →</p>
+      <p className="mt-2 text-sm font-semibold text-ink-900 truncate">{category.name}</p>
+      <p className="text-[11px] text-slate-400 group-hover:text-brand-700 transition-colors">Shop Now →</p>
     </Link>
   )
 }
@@ -87,6 +92,69 @@ function LoadErrorNotice({ onRetry, label }) {
         Retry
       </button>
     </div>
+  )
+}
+
+const BADGE_ICONS = { truck: TruckIcon, phone: PhoneIcon, box: BoxIcon, check: CheckCircleIcon }
+
+// Products the visitor opened before (saved by the product page).
+function readRecentViewed() {
+  try {
+    const list = JSON.parse(localStorage.getItem('knovix_recently_viewed')) || []
+    return Array.isArray(list) ? list : []
+  } catch {
+    return []
+  }
+}
+
+function TrustStrip({ freeMin }) {
+  return (
+    <section className="container-px max-w-7xl mx-auto pt-2.5">
+      <div className="panel !py-3 flex lg:grid lg:grid-cols-4 gap-x-6 gap-y-3 overflow-x-auto no-scrollbar">
+        {trustBadges.map(({ icon, title, sub, href }) => {
+          const Icon = BADGE_ICONS[icon] || CheckCircleIcon
+          const text = String(sub || '').replace('{freeMin}', freeMin ?? '')
+          const inner = (
+            <>
+              <span className="w-9 h-9 shrink-0 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center">
+                <Icon className="w-[18px] h-[18px]" />
+              </span>
+              <span className="leading-tight whitespace-nowrap">
+                <span className="block text-xs font-semibold text-ink-900">{title}</span>
+                <span className="block text-[11px] text-slate-500">{text}</span>
+              </span>
+            </>
+          )
+          return href ? (
+            <a key={title} href={href} className="flex items-center gap-2.5 shrink-0">{inner}</a>
+          ) : (
+            <div key={title} className="flex items-center gap-2.5 shrink-0">{inner}</div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function PromoTiles() {
+  if (!promoTiles.length) return null
+  return (
+    <section className="container-px max-w-7xl mx-auto py-2.5">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2.5 sm:gap-3">
+        {promoTiles.map((t) => (
+          <Link
+            key={t.id}
+            to={t.href}
+            className="group relative block aspect-[3/4] rounded-2xl overflow-hidden bg-slate-200 shadow-card"
+          >
+            <img src={t.image} alt={t.label || ''} loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" />
+            {t.tag && (
+              <span className="absolute top-2 right-2 rounded-md bg-white/85 px-1.5 py-0.5 text-[10px] font-bold text-ink-900">{t.tag}</span>
+            )}
+          </Link>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -140,23 +208,49 @@ export default function Home() {
     [products]
   )
 
-  // Hero slides: the dark "Upgrade Your Everyday Tech" theme, each slide
-  // paired with a real catalog product (featured first) and linked to it.
-  const heroProducts = (featured.length > 0 ? featured : products).slice(0, 8)
-  const heroSlides = homeBanners
+  // "Still looking for these?" row — editable in src/data/homeContent.js
+  const { user } = useAuth()
+  const firstName = String(user?.name || '').trim().split(/\s+/)[0]
+  const pickSource = (name) =>
+    name === 'featured' ? featured
+    : name === 'deals' ? dealProducts
+    : name === 'bestSellers' ? bestSellers
+    : products
+  const recentEntries = useMemo(() => readRecentViewed(), [])
+  const recentProducts = recentEntries
+    .map((e) => products.find((p) => String(p.id) === String(e.id)) || e)
+    .slice(0, lookingRail.max)
+  const useRecent = lookingRail.source === 'recent' && recentProducts.length > 0
+  const railProducts = useRecent
+    ? recentProducts
+    : pickSource(lookingRail.source === 'recent' ? lookingRail.fallbackSource : lookingRail.source).slice(0, lookingRail.max)
+  const railTitle = useRecent || lookingRail.source !== 'recent'
+    ? (firstName && lookingRail.titleWithName
+        ? lookingRail.titleWithName.replace('{name}', firstName)
+        : lookingRail.title)
+    : lookingRail.fallbackTitle
 
   return (
     <div>
       {/* Visually hidden but still a real, crawlable <h1> for SEO. */}
       <h1 className="sr-only">Knovix – Smart Gadgets. Smarter Living.</h1>
 
-      <div className="bg-ink-900">
-        <HeroCarousel slides={heroSlides} products={heroProducts} loading={productsLoading} freeMin={freeMin} />
+      {/* Home layout: edit what shows in src/data/homeContent.js */}
+      {homeShow.categoryTabs && <CategoryTabs tabs={categoryTabs} categories={categories} />}
 
-        <section className="container-px max-w-7xl mx-auto pt-2 pb-8">
+      <div className="page-bg pb-2">
+      {homeShow.banners && <HomeBannerSlider slides={homeBanners} />}
+      {homeShow.trustBadges && <TrustStrip freeMin={freeMin} />}
+      {homeShow.lookingRail && !productsLoading && !productsError && (
+        <MiniProductRail title={railTitle} products={railProducts} />
+      )}
+      {homeShow.promoTiles && <PromoTiles />}
+
+      {homeShow.categoryGrid && (
+        <section className="container-px max-w-7xl mx-auto py-2.5"><div className="panel">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg sm:text-xl font-bold text-white">Shop By Category</h2>
-            <Link to="/shop" className="text-amber-400 text-sm font-medium">View All Categories →</Link>
+            <h2 className="section-title">Shop By Category</h2>
+            <Link to="/shop" className="text-brand-700 text-sm font-medium">View all →</Link>
           </div>
 
           {categoriesError ? (
@@ -164,9 +258,9 @@ export default function Home() {
           ) : categoriesLoading ? (
             <div className="flex lg:grid lg:grid-cols-6 gap-3 overflow-x-auto no-scrollbar">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="w-36 lg:w-auto shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                  <div className="aspect-[4/5] rounded-xl bg-white/5 animate-pulse" />
-                  <div className="h-3 rounded bg-white/10 animate-pulse mt-3 w-3/4" />
+                <div key={i} className="w-36 lg:w-auto shrink-0 rounded-2xl border border-slate-200 bg-white p-3">
+                  <div className="aspect-[4/5] rounded-xl bg-slate-100 animate-pulse" />
+                  <div className="h-3 rounded bg-slate-100 animate-pulse mt-3 w-3/4" />
                 </div>
               ))}
             </div>
@@ -179,11 +273,10 @@ export default function Home() {
               ))}
             </div>
           )}
-        </section>
-      </div>
+        </div></section>
+      )}
 
-      <div className="page-bg py-2">
-      {(productsLoading || productsError || featured.length > 0) && (
+      {homeShow.featured && (productsLoading || productsError || featured.length > 0) && (
       <section className="container-px max-w-7xl mx-auto py-2.5"><div className="panel">
         <div className="flex items-center justify-between mb-4">
           <h2 className="section-title">Featured Products</h2>
@@ -206,6 +299,7 @@ export default function Home() {
           (resets every 24h, see useDealCountdown above) followed by a
           horizontally-scrolling row of the catalog's steepest discounts,
           instead of a single static banner. */}
+      {homeShow.deals && (
       <section className="container-px max-w-7xl mx-auto py-2.5"><div className="panel">
         <div className="rounded-xl overflow-hidden flash-sale-bg text-white">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3">
@@ -243,8 +337,9 @@ export default function Home() {
           <Link to="/shop" className="text-brand-700 text-sm font-medium">See all deals →</Link>
         </div>
       </div></section>
+      )}
 
-      {(productsLoading || productsError || bestSellers.length > 0) && (
+      {homeShow.bestSellers && (productsLoading || productsError || bestSellers.length > 0) && (
       <section className="container-px max-w-7xl mx-auto py-2.5"><div className="panel">
         <div className="flex items-center justify-between mb-4">
           <h2 className="section-title">Best Sellers</h2>
@@ -265,6 +360,7 @@ export default function Home() {
 
       </div>
 
+      {homeShow.newsletter && (
       <section className="bg-brand-50">
         <div className="container-px max-w-7xl mx-auto py-7 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -277,6 +373,7 @@ export default function Home() {
           </form>
         </div>
       </section>
+      )}
 
     </div>
   )

@@ -277,3 +277,40 @@ export function TruckIcon({ className = 'w-5 h-5' }) {
     </svg>
   )
 }
+
+export function PhoneDeviceIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
+      <path d="M11 18.5h2" />
+    </svg>
+  )
+}
+
+export function WatchIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <rect x="7" y="7" width="10" height="10" rx="3" />
+      <path d="M9.5 7 10 3h4l.5 4M9.5 17l.5 4h4l.5-4M12 10v2l1.4 1" />
+    </svg>
+  )
+}
+
+export function LaptopIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <rect x="4.5" y="5" width="15" height="10.5" rx="1.5" />
+      <path d="M2.5 19h19" />
+    </svg>
+  )
+}
+
+export function CarIcon({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M5 16V12l1.8-4.2A1.5 1.5 0 0 1 8.2 7h7.6a1.5 1.5 0 0 1 1.4.8L19 12v4M3.5 16h17M7.5 16v1.5M16.5 16v1.5" />
+      <circle cx="8" cy="13" r="0.6" />
+      <circle cx="16" cy="13" r="0.6" />
+    </svg>
+  )
+}

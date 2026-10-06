@@ -1,0 +1,30 @@
+/* ═════════════════════════════════════════════════════════════════════════
+   HOME PAGE COLOURS — edit the values below, save, done.
+   ═════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* top tab bar */
+  --tabs-bg: linear-gradient(180deg, #1b596a 0%, #247085 100%);
+  --tabs-text: #ffffff;
+  --tabs-active-box: rgba(15, 37, 48, 0.35);   /* square behind the active icon */
+  --tabs-underline: #ffffff;
+
+  /* "Still looking for these?" panel */
+  --rail-bg: linear-gradient(180deg, #e1f0f4 0%, #a9d4e0 100%);
+  --rail-title: #0f2530;
+  --rail-tag-bg: #247085;                      /* ↓38% corner tag */
+  --rail-tag-text: #ffffff;
+
+  /* page background behind white panels */
+  --home-page-bg: #eef2f4;
+}
+
+.home-tabs { background: var(--tabs-bg); color: var(--tabs-text); }
+.home-tab-box { transition: background-color 0.2s; }
+.home-tab.is-active .home-tab-box { background: var(--tabs-active-box); }
+.home-tab-underline { height: 3px; border-radius: 3px; background: var(--tabs-underline); }
+
+.home-rail { background: var(--rail-bg); }
+.home-rail-title { color: var(--rail-title); }
+.home-rail-tag { background: var(--rail-tag-bg); color: var(--rail-tag-text); }
+
+.page-bg { background: var(--home-page-bg); }

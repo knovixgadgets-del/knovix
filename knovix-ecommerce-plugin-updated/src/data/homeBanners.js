@@ -17,6 +17,11 @@
 //              and write '/banners/my-banner.jpg'  (about 1600x700 works best).
 //              Leave '' for the plain Knovix navy background.
 //              Pictures always fill the banner (cover) and stay centred.
+//   imageMobile : OPTIONAL separate picture for phones, e.g. '/banners/my-banner-mobile.jpg'
+//              (square-ish / portrait crop). Desktop keeps using  image.
+//   showText : OPTIONAL. Set  showText: false  when the picture already has
+//              its own text baked in — then no text/dark overlay is added and
+//              the whole banner is simply clickable (goes to href).
 //   imagePosition : OPTIONAL, which part of the picture stays visible when
 //              cropped on phones, e.g. 'center top', 'left center', '70% 50%'.
 //              Default is 'center center'. Add it inside any banner { ... }.
