@@ -3,17 +3,31 @@
 //  Save, and the site (npm run dev) updates instantly. Add, remove or reorder
 //  items freely; they auto-loop in the order listed.
 //
-//  eyebrow  : small yellow line above the heading
-//  title    : main heading (white)
-//  accent   : last word, shown in yellow script style (use '' for none)
-//  subtitle : one short supporting line
-//  cta      : button label
-//  href     : where the button goes, e.g. '/shop', '/shop?sort=rating',
-//             '/product/123', '/contact'
-//  image    : OPTIONAL full-width background picture for that banner. Put the
-//             file in the project's  public/banners/  folder and write
-//             '/banners/my-banner.jpg'. Leave '' for the plain Knovix navy.
-//             (Wide landscape pictures, about 1600x700, work best.)
+//  TEXT FIELDS
+//   eyebrow  : small line above the heading
+//   title    : main heading
+//   accent   : last word, shown in script style (use '' for none)
+//   subtitle : one short supporting line
+//   cta      : button label
+//   href     : where the button goes, e.g. '/shop', '/shop?sort=rating',
+//              '/product/123', '/contact'
+//
+//  PICTURE
+//   image    : full-width background picture. Put the file in public/banners/
+//              and write '/banners/my-banner.jpg'  (about 1600x700 works best).
+//              Leave '' for the plain Knovix navy background.
+//              The 3 banners below use DUMMY pictures — replace them.
+//
+//  LOOK (optional)
+//   theme    : name of a text style from src/styles/banner.css
+//              'default' | 'bold' | 'light' | 'center'
+//              (add your own by copying a  .hb-theme-xxx  block in banner.css)
+//
+//  HOW TO ADD A BANNER: copy one { ... }, paste it after a comma, give it a
+//  new unique id, and change the text/picture.
+//
+//  HOW TO STYLE THE TEXT (font size, colour, button...): open
+//  src/styles/banner.css — everything is in the first block at the top.
 // ─────────────────────────────────────────────────────────────────────────
 export const homeBanners = [
   {
@@ -24,7 +38,8 @@ export const homeBanners = [
     subtitle: 'Latest gadgets. Premium brands. Performance you can trust.',
     cta: 'Shop Now',
     href: '/shop',
-    image: ''
+    image: '/banners/dummy-banner-1.svg',
+    theme: 'default'
   },
   {
     id: 'power',
@@ -34,7 +49,8 @@ export const homeBanners = [
     subtitle: 'Chargers, cables and mobile accessories made for everyday use.',
     cta: 'Shop Accessories',
     href: '/shop',
-    image: ''
+    image: '/banners/dummy-banner-2.svg',
+    theme: 'bold'
   },
   {
     id: 'trending',
@@ -44,6 +60,7 @@ export const homeBanners = [
     subtitle: 'Discover smart gadgets, electronics and everyday technology.',
     cta: 'Shop Best Rated',
     href: '/shop?sort=rating',
-    image: ''
+    image: '/banners/dummy-banner-3.svg',
+    theme: 'default'
   }
 ]

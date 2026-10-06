@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f2530"/><stop offset="1" stop-color="#247085"/></linearGradient>
+<radialGradient id="r" cx="0.8" cy="0.4" r="0.5"><stop offset="0" stop-color="#fab816" stop-opacity="0.35"/><stop offset="1" stop-color="#fab816" stop-opacity="0"/></radialGradient></defs>
+<rect width="1600" height="700" fill="url(#g)"/><rect width="1600" height="700" fill="url(#r)"/>
+<circle cx="1280" cy="260" r="210" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="2"/>
+<circle cx="1280" cy="260" r="300" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="2"/>
+<rect x="1130" y="130" width="300" height="300" rx="42" fill="#fff" fill-opacity=".08"/>
+<text x="1280" y="300" text-anchor="middle" font-family="Arial,sans-serif" font-size="46" font-weight="700" fill="#fff" fill-opacity=".35">EARBUDS</text>
+<text x="1280" y="345" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" fill="#fff" fill-opacity=".3">dummy image</text>
+</svg>

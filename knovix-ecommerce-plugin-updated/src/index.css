@@ -102,3 +102,45 @@ h1,h2,h3,h4 { @apply font-display; }
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
+
+
+/* ═══ PREMIUM STORE LAYER ═══ */
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+:focus-visible { outline: 2px solid #328ca4; outline-offset: 2px; }
+::selection { background: #fab816; color: #0f2530; }
+
+/* Soft grey page + white panels (Amazon-style sections) */
+.page-bg { background: #eef2f4; }
+.panel { @apply bg-white rounded-xl p-4 sm:p-5; box-shadow: 0 1px 2px rgba(15,37,48,0.06), 0 4px 16px rgba(15,37,48,0.05); }
+.section-title { @apply text-lg sm:text-xl font-bold text-ink-900; }
+
+/* Product card: lift on hover, yellow add-to-cart (Amazon-style) */
+.product-card > a { transition: box-shadow 0.25s ease, transform 0.25s ease; }
+@media (hover: hover) {
+  .product-card:hover > a { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(15,37,48,0.14); }
+}
+.add-to-cart-btn {
+  @apply h-9 rounded-full text-[13px] font-semibold text-ink-900 transition-colors;
+  background: #fab816;
+}
+.add-to-cart-btn:hover { background: #f5a800; }
+.add-to-cart-btn:active { transform: scale(0.98); }
+
+/* Primary buttons: slightly richer, with press feedback */
+.btn-primary { box-shadow: 0 2px 6px rgba(36,112,133,0.25); }
+.btn:active { transform: scale(0.98); }
+
+/* Shimmering skeletons */
+.animate-pulse { background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent); background-size: 200% 100%; animation: shimmer 1.4s infinite, pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* Slim, tidy scrollbars on desktop */
+@media (min-width: 1024px) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #b6c6cd; border-radius: 8px; border: 2px solid #f1f5f7; }
+  ::-webkit-scrollbar-thumb:hover { background: #8aa3ad; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .product-card > a { transition: none; }
+  .animate-pulse { animation: none; }
+}

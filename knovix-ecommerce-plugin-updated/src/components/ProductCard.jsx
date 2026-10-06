@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useWishlist } from '../context/WishlistContext'
+import { useCart } from '../context/CartContext'
+import StarRating from './StarRating'
+import { getDisplayRating } from '../utils/rating'
 
 const inr = (n) => Number(n || 0).toLocaleString('en-IN')
 
@@ -39,6 +42,8 @@ function DiscountBadge({ percent }) {
 
 export default function ProductCard({ product }) {
   const { toggle, isWishlisted } = useWishlist()
+  const { addItem } = useCart()
+  const [added, setAdded] = useState(false)
   const [imgErrored, setImgErrored] = useState(false)
 
   const mrp = Number(product.mrp) || 0
@@ -52,12 +57,12 @@ export default function ProductCard({ product }) {
   const wished = isWishlisted(product.id)
 
   return (
-    <div className="relative group">
+    <div className="relative group product-card">
       {percent > 0 && <DiscountBadge percent={percent} />}
 
       <Link
         to={`/product/${product.id}`}
-        className="block h-full bg-white rounded-2xl shadow-card p-3 pt-3.5 flex flex-col"
+        className="block h-full bg-white rounded-2xl shadow-card p-3 pt-3.5 flex flex-col pb-14"
       >
         <div className="aspect-square rounded-xl overflow-hidden bg-white flex items-center justify-center">
           {product.image && !imgErrored ? (
@@ -79,6 +84,10 @@ export default function ProductCard({ product }) {
           {product.name}
         </h3>
 
+        <div className="mt-1">
+          <StarRating rating={getDisplayRating(product)} reviews={product.reviews} />
+        </div>
+
         <div className="mt-1.5 flex items-baseline gap-2 flex-wrap">
           <span className="text-xl font-bold text-ink-900">₹{inr(price)}</span>
           {saved > 0 && (
@@ -98,6 +107,16 @@ export default function ProductCard({ product }) {
           )
         )}
       </Link>
+
+      {!outOfStock && (
+        <button
+          type="button"
+          onClick={() => { addItem(product, 1); setAdded(true); setTimeout(() => setAdded(false), 1400) }}
+          className="add-to-cart-btn absolute left-3 right-3 bottom-3"
+        >
+          {added ? '✓ Added' : 'Add to Cart'}
+        </button>
+      )}
 
       <button
         type="button"

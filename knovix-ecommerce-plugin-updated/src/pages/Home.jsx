@@ -182,10 +182,11 @@ export default function Home() {
         </section>
       </div>
 
+      <div className="page-bg py-2">
       {(productsLoading || productsError || featured.length > 0) && (
-      <section className="container-px max-w-7xl mx-auto py-6">
+      <section className="container-px max-w-7xl mx-auto py-2.5"><div className="panel">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg sm:text-xl font-bold">Featured Products</h2>
+          <h2 className="section-title">Featured Products</h2>
           <Link to="/shop" className="text-brand-700 text-sm font-medium">View all →</Link>
         </div>
 
@@ -198,14 +199,14 @@ export default function Home() {
             {featured.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
-      </section>
+      </div></section>
       )}
 
       {/* Mega Deals — Amazon-style deals rail: a slim countdown ribbon
           (resets every 24h, see useDealCountdown above) followed by a
           horizontally-scrolling row of the catalog's steepest discounts,
           instead of a single static banner. */}
-      <section className="container-px max-w-7xl mx-auto py-6">
+      <section className="container-px max-w-7xl mx-auto py-2.5"><div className="panel">
         <div className="rounded-xl overflow-hidden flash-sale-bg text-white">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3">
             <div>
@@ -241,12 +242,12 @@ export default function Home() {
         <div className="text-right mt-2">
           <Link to="/shop" className="text-brand-700 text-sm font-medium">See all deals →</Link>
         </div>
-      </section>
+      </div></section>
 
       {(productsLoading || productsError || bestSellers.length > 0) && (
-      <section className="container-px max-w-7xl mx-auto py-6">
+      <section className="container-px max-w-7xl mx-auto py-2.5"><div className="panel">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg sm:text-xl font-bold">Best Sellers</h2>
+          <h2 className="section-title">Best Sellers</h2>
           <Link to="/shop" className="text-brand-700 text-sm font-medium">View all →</Link>
         </div>
 
@@ -259,8 +260,10 @@ export default function Home() {
             {bestSellers.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
-      </section>
+      </div></section>
       )}
+
+      </div>
 
       <section className="bg-brand-50">
         <div className="container-px max-w-7xl mx-auto py-7 flex flex-wrap items-center justify-between gap-4">

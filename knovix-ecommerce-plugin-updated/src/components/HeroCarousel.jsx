@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRightIcon, TruckIcon, CheckCircleIcon, BoxIcon, PhoneIcon } from './Icons'
+import '../styles/banner.css' // banner text look — edit src/styles/banner.css
 
 const TEXT_MS = 4500
 const PRODUCT_MS = 3000
@@ -126,7 +127,7 @@ export default function HeroCarousel({ slides = [], products = [], loading = fal
   ]
 
   return (
-    <div className="relative w-full bg-ink-900 text-white overflow-hidden flex flex-col min-h-[75svh] sm:min-h-0">
+    <div className={`hb-theme-${slides[active]?.theme || 'default'} relative w-full bg-ink-900 text-white overflow-hidden flex flex-col min-h-[75svh] sm:min-h-[460px] lg:min-h-[520px]`}>
       {slides.some((sl) => sl.image) && (
         <>
           {slides.map((sl, i) => sl.image && (
@@ -138,11 +139,24 @@ export default function HeroCarousel({ slides = [], products = [], loading = fal
               className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === active ? 'opacity-100' : 'opacity-0'}`}
             />
           ))}
-          <div className={`pointer-events-none absolute inset-0 bg-ink-900/70 transition-opacity duration-700 ${slides[active]?.image ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`hb-overlay pointer-events-none absolute inset-0 transition-opacity duration-700 ${slides[active]?.image ? 'opacity-100' : 'opacity-0'}`} />
         </>
       )}
       <div className="pointer-events-none absolute -right-24 -top-10 w-[26rem] h-[26rem] rounded-full bg-brand-500/25 blur-3xl" />
       <div className="pointer-events-none absolute -left-24 bottom-0 w-72 h-72 rounded-full bg-brand-600/20 blur-3xl" />
+
+      {count > 1 && (
+        <>
+          <button type="button" aria-label="Previous banner" onClick={() => goTo(active - 1)}
+            className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-14 items-center justify-center rounded-md bg-black/25 hover:bg-black/45 text-white backdrop-blur-sm transition-colors">
+            <ChevronRightIcon className="w-5 h-5 rotate-180" />
+          </button>
+          <button type="button" aria-label="Next banner" onClick={() => goTo(active + 1)}
+            className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-14 items-center justify-center rounded-md bg-black/25 hover:bg-black/45 text-white backdrop-blur-sm transition-colors">
+            <ChevronRightIcon className="w-5 h-5" />
+          </button>
+        </>
+      )}
 
       <div className="relative flex-1 container-px max-w-7xl mx-auto w-full grid lg:grid-cols-2 items-center content-center gap-6 lg:gap-10 pt-7 pb-5 sm:py-10">
         {/* Headline slides — stacked in one grid cell so the block sizes
@@ -161,21 +175,17 @@ export default function HeroCarousel({ slides = [], products = [], loading = fal
                 <div
                   key={slide.id}
                   aria-hidden={!on}
-                  className={`col-start-1 row-start-1 transition-all duration-700 ease-out ${
+                  className={`hb-slide col-start-1 row-start-1 transition-all duration-700 ease-out ${
                     on ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
                   }`}
                 >
-                  <p className="text-[11px] sm:text-xs font-semibold tracking-[0.18em] text-amber-400">{slide.eyebrow}</p>
-                  <h2 className="mt-2.5 font-display font-semibold text-[32px] leading-[1.1] sm:text-5xl lg:text-6xl">
+                  <p className="hb-eyebrow">{slide.eyebrow}</p>
+                  <h2 className="hb-title">
                     {slide.title}{' '}
-                    <span className="font-script text-amber-400 text-[42px] sm:text-6xl lg:text-7xl italic font-bold whitespace-nowrap">{slide.accent}</span>
+                    {slide.accent && <span className="hb-accent">{slide.accent}</span>}
                   </h2>
-                  <p className="mt-3 text-sm sm:text-base text-slate-300 max-w-sm leading-relaxed">{slide.subtitle}</p>
-                  <Link
-                    to={slide.href}
-                    tabIndex={on ? 0 : -1}
-                    className="mt-5 inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-ink-900 font-bold text-sm px-6 py-3 rounded-full transition-colors"
-                  >
+                  <p className="hb-subtitle">{slide.subtitle}</p>
+                  <Link to={slide.href} tabIndex={on ? 0 : -1} className="hb-cta">
                     {slide.cta}
                     <ChevronRightIcon className="w-4 h-4" />
                   </Link>
