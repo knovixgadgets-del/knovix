@@ -3,14 +3,10 @@
 //  Save, and the site (npm run dev) updates instantly. Add, remove or reorder
 //  items freely; they auto-loop in the order listed.
 //
-//  TEXT FIELDS
-//   eyebrow  : small line above the heading
-//   title    : main heading
-//   accent   : last word, shown in script style (use '' for none)
-//   subtitle : one short supporting line
-//   cta      : button label
-//   href     : where the button goes, e.g. '/shop', '/shop?sort=rating',
-//              '/product/123', '/contact'
+//  BUTTON (banners show ONLY a button — no heading/subtitle text)
+//   cta      : button label, e.g. 'Shop Now'
+//   href     : where the button (and the banner) goes, e.g. '/shop',
+//              '/shop?sort=rating', '/product/123', '/contact'
 //
 //  PICTURE
 //   image    : full-width background picture. Put the file in public/banners/
@@ -40,37 +36,7 @@
 //  src/styles/banner.css — everything is in the first block at the top.
 // ─────────────────────────────────────────────────────────────────────────
 export const homeBanners = [
-  {
-    id: 'upgrade',
-    eyebrow: 'NEW SEASON. NEW TECH.',
-    title: 'Upgrade Your Everyday',
-    accent: 'Tech.',
-    subtitle: 'Latest gadgets. Premium brands. Performance you can trust.',
-    cta: 'Shop Now',
-    href: '/shop',
-    image: './banners/knovix-banner-1.jpg',
-    theme: 'default'
-  },
-  {
-    id: 'power',
-    eyebrow: 'SMART ACCESSORIES',
-    title: 'Power Up Your',
-    accent: 'Day.',
-    subtitle: 'Chargers, cables and mobile accessories made for everyday use.',
-    cta: 'Shop Accessories',
-    href: '/shop',
-    image: './banners/knovix-banner-2.jpg',
-    theme: 'bold'
-  },
-  {
-    id: 'trending',
-    eyebrow: 'TRENDING NOW',
-    title: "Gadgets You'll",
-    accent: 'Love.',
-    subtitle: 'Discover smart gadgets, electronics and everyday technology.',
-    cta: 'Shop Best Rated',
-    href: '/shop?sort=rating',
-    image: './banners/knovix-banner-3.jpg',
-    theme: 'default'
-  }
+  { id: 'upgrade',  cta: 'Shop Now',         href: '/shop',             image: './banners/knovix-banner-1.jpg' },
+  { id: 'power',    cta: 'Shop Accessories', href: '/shop',             image: './banners/knovix-banner-2.jpg' },
+  { id: 'trending', cta: 'Shop Best Rated',  href: '/shop?sort=rating', image: './banners/knovix-banner-3.jpg' }
 ]

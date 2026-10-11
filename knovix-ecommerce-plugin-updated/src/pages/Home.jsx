@@ -110,7 +110,7 @@ function readRecentViewed() {
 function TrustStrip({ freeMin }) {
   return (
     <section className="container-px max-w-7xl mx-auto pt-2.5">
-      <div className="panel !py-3 flex lg:grid lg:grid-cols-4 gap-x-6 gap-y-3 overflow-x-auto no-scrollbar">
+      <div className="panel !py-3 grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
         {trustBadges.map(({ icon, title, sub, href }) => {
           const Icon = BADGE_ICONS[icon] || CheckCircleIcon
           const text = String(sub || '').replace('{freeMin}', freeMin ?? '')
@@ -119,16 +119,16 @@ function TrustStrip({ freeMin }) {
               <span className="w-9 h-9 shrink-0 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center">
                 <Icon className="w-[18px] h-[18px]" />
               </span>
-              <span className="leading-tight whitespace-nowrap">
+              <span className="leading-tight min-w-0">
                 <span className="block text-xs font-semibold text-ink-900">{title}</span>
                 <span className="block text-[11px] text-slate-500">{text}</span>
               </span>
             </>
           )
           return href ? (
-            <a key={title} href={href} className="flex items-center gap-2.5 shrink-0">{inner}</a>
+            <a key={title} href={href} className="flex items-center gap-2.5 min-w-0">{inner}</a>
           ) : (
-            <div key={title} className="flex items-center gap-2.5 shrink-0">{inner}</div>
+            <div key={title} className="flex items-center gap-2.5 min-w-0">{inner}</div>
           )
         })}
       </div>

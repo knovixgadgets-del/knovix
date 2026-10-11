@@ -62,37 +62,24 @@ export default function HomeBannerSlider({ slides = [] }) {
           </picture>
         ))}
 
-        {/* dark overlay only where text sits on the picture */}
-        {slides.some((sl) => sl.image) && (
-          <div className={`hb-overlay pointer-events-none absolute inset-0 transition-opacity duration-700 ${current.image && current.showText !== false ? 'opacity-100' : 'opacity-0'}`} />
-        )}
-
         {/* whole active banner is clickable */}
-        <Link to={current.href || '/shop'} aria-label={current.title || 'Open banner'} className="absolute inset-0 z-[1]" />
+        <Link to={current.href || '/shop'} aria-label={current.cta || 'Open banner'} className="absolute inset-0 z-[1]" />
 
-        {/* text layer */}
-        <div className="pointer-events-none absolute inset-0 z-[2] grid place-items-center px-6 sm:px-16">
+        {/* button layer — banners show only the button(s), no text */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-4 sm:bottom-8 z-[2] grid place-items-center px-6">
           {slides.map((slide, i) => {
             const on = i === active
-            if (slide.showText === false) return null
+            if (!slide.cta) return null
             return (
               <div
                 key={slide.id}
                 aria-hidden={!on}
-                className={`hb-slide col-start-1 row-start-1 transition-all duration-700 ease-out ${on ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+                className={`col-start-1 row-start-1 transition-all duration-700 ease-out ${on ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
               >
-                {slide.eyebrow && <p className="hb-eyebrow">{slide.eyebrow}</p>}
-                <h2 className="hb-title">
-                  {slide.title}{' '}
-                  {slide.accent && <span className="hb-accent">{slide.accent}</span>}
-                </h2>
-                {slide.subtitle && <p className="hb-subtitle">{slide.subtitle}</p>}
-                {slide.cta && (
-                  <Link to={slide.href || '/shop'} tabIndex={on ? 0 : -1} className="hb-cta pointer-events-auto">
-                    {slide.cta}
-                    <ChevronRightIcon className="w-4 h-4" />
-                  </Link>
-                )}
+                <Link to={slide.href || '/shop'} tabIndex={on ? 0 : -1} className={`hb-cta !mt-0 ${on ? 'pointer-events-auto' : ''}`}>
+                  {slide.cta}
+                  <ChevronRightIcon className="w-4 h-4" />
+                </Link>
               </div>
             )
           })}

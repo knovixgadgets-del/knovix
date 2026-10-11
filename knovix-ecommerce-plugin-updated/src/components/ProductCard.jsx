@@ -42,8 +42,8 @@ function DiscountBadge({ percent }) {
 
 export default function ProductCard({ product }) {
   const { toggle, isWishlisted } = useWishlist()
-  const { addItem } = useCart()
-  const [added, setAdded] = useState(false)
+  const { addItem, items } = useCart()
+  const inCart = items.some((i) => i.id === product.id)
   const [imgErrored, setImgErrored] = useState(false)
 
   const mrp = Number(product.mrp) || 0
@@ -109,13 +109,19 @@ export default function ProductCard({ product }) {
       </Link>
 
       {!outOfStock && (
-        <button
-          type="button"
-          onClick={() => { addItem(product, 1); setAdded(true); setTimeout(() => setAdded(false), 1400) }}
-          className="add-to-cart-btn absolute left-3 right-3 bottom-3"
-        >
-          {added ? '✓ Added' : 'Add to Cart'}
-        </button>
+        inCart ? (
+          <Link to="/checkout" className="add-to-cart-btn absolute left-3 right-3 bottom-3 text-center">
+            Go to Cart
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => addItem(product, 1)}
+            className="add-to-cart-btn absolute left-3 right-3 bottom-3"
+          >
+            Add to Cart
+          </button>
+        )
       )}
 
       <button

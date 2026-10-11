@@ -53,7 +53,8 @@ export default function ProductDetail() {
   const [linkCopied, setLinkCopied] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
 
-  const { addItem } = useCart()
+  const { addItem, items: cartItems } = useCart()
+  const inCart = product ? cartItems.some((i) => i.id === product.id) : false
   const { toggle, isWishlisted } = useWishlist()
 
   useEffect(() => {
@@ -284,14 +285,23 @@ export default function ProductDetail() {
           </div>
 
           <div className="mt-3 flex flex-col sm:flex-row gap-3">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              className="btn-outline flex-1 h-10 text-sm whitespace-nowrap"
-            >
-              {added ? 'Added ✓' : '🛒 Add to Cart'}
-            </button>
+            {inCart ? (
+              <Link
+                to="/checkout"
+                className="btn-outline flex-1 h-10 text-sm whitespace-nowrap flex items-center justify-center"
+              >
+                🛒 Go to Cart
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={product.stock === 0}
+                className="btn-outline flex-1 h-10 text-sm whitespace-nowrap"
+              >
+                🛒 Add to Cart
+              </button>
+            )}
 
             <button
               type="button"

@@ -22,6 +22,20 @@ export default function Footer({ flush = false }) {
           <p className="mt-3 text-slate-400 text-xs leading-relaxed">
             Your one-stop destination for premium gadgets and accessories. Quality, trust and satisfaction guaranteed.
           </p>
+          <ul className="mt-4 space-y-2 text-xs text-slate-300">
+            <li>
+              <span className="text-slate-500">Email: </span>
+              <a href="mailto:knovixgadgets@gmail.com" className="hover:text-white">knovixgadgets@gmail.com</a>
+            </li>
+            <li>
+              <span className="text-slate-500">Mobile: </span>
+              <a href="tel:+919447477665" className="hover:text-white">9447477665</a>
+            </li>
+            <li className="leading-relaxed">
+              <span className="text-slate-500">Location: </span>
+              Knovixgadgets, Vadapalani, Chennai, Tamil Nadu, India – 600026
+            </li>
+          </ul>
           <div className="flex items-center gap-3 mt-4">
             {socials.map(({ icon: Icon, label, href }) => (
               <a
