@@ -31,7 +31,7 @@ export const homeShow = {
 //   ]
 export const categoryTabs = null
 
-// 3) TRUST STRIP under the banner. icon: truck | phone | box | check
+// 3) TRUST STRIP (shown under the Mega Deals banner). icon: truck | phone | box | check
 //   {freeMin} is replaced with your free-shipping amount automatically.
 export const trustBadges = [
   { icon: 'truck', title: 'Free Shipping', sub: 'On orders above ₹{freeMin}' },
@@ -60,10 +60,10 @@ export const lookingRail = {
 //  tag   : tiny label on the corner ('' for none, e.g. 'NEW', 'AD')
 //  The tile-*.svg pictures are DUMMY — replace them with your own.
 export const promoTiles = [
-  { id: 't1', image: '/home/tile-1.svg', href: '/shop?search=earbuds', label: 'Earbuds', tag: 'NEW' },
-  { id: 't2', image: '/home/tile-2.svg', href: '/shop?search=charger', label: 'Chargers', tag: '' },
-  { id: 't3', image: '/home/tile-3.svg', href: '/shop?search=watch', label: 'Smart Watches', tag: '' },
-  { id: 't4', image: '/home/tile-4.svg', href: '/shop?search=power bank', label: 'Power Banks', tag: '' },
-  { id: 't5', image: '/home/tile-5.svg', href: '/shop?search=car', label: 'Car Accessories', tag: '' },
-  { id: 't6', image: '/home/tile-6.svg', href: '/shop?search=case', label: 'Phone Cases', tag: '' }
+  { id: 't1', image: '/home/tile-earbuds.jpg', href: '/shop?search=earbuds', label: 'Earbuds', tag: 'NEW' },
+  { id: 't2', image: '/home/tile-chargers.jpg', href: '/shop?search=charger', label: 'Chargers', tag: '' },
+  { id: 't3', image: '/home/tile-watches.jpg', href: '/shop?search=watch', label: 'Smart Watches', tag: '' },
+  { id: 't4', image: '/home/tile-powerbanks.jpg', href: '/shop?search=power bank', label: 'Power Banks', tag: '' },
+  { id: 't5', image: '/home/tile-car.jpg', href: '/shop?search=car', label: 'Car Accessories', tag: '' },
+  { id: 't6', image: '/home/tile-cases.jpg', href: '/shop?search=case', label: 'Phone Cases', tag: '' }
 ]

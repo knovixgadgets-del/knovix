@@ -36,7 +36,7 @@
 //  src/styles/banner.css — everything is in the first block at the top.
 // ─────────────────────────────────────────────────────────────────────────
 export const homeBanners = [
-  { id: 'upgrade',  cta: 'Shop Now',         href: '/shop',             image: './banners/knovix-banner-1.jpg' },
-  { id: 'power',    cta: 'Shop Accessories', href: '/shop',             image: './banners/knovix-banner-2.jpg' },
-  { id: 'trending', cta: 'Shop Best Rated',  href: '/shop?sort=rating', image: './banners/knovix-banner-3.jpg' }
+  { id: 'upgrade',  cta: 'Shop Now',         href: '/shop',             image: '/banners/knovix-banner-1.jpg' },
+  { id: 'power',    cta: 'Shop Accessories', href: '/shop',             image: '/banners/knovix-banner-2.jpg' },
+  { id: 'trending', cta: 'Shop Best Rated',  href: '/shop?sort=rating', image: '/banners/knovix-banner-3.jpg' }
 ]

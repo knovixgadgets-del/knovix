@@ -10,7 +10,7 @@ const cols = [
 const socials = [
   { icon: FacebookIcon, label: 'Facebook', href: 'https://facebook.com' },
   { icon: InstagramIcon, label: 'Instagram', href: 'https://instagram.com' },
-  { icon: WhatsappIcon, label: 'WhatsApp', href: 'https://wa.me/919876543210' }
+  { icon: WhatsappIcon, label: 'WhatsApp', href: 'https://wa.me/919447477665' }
 ]
 
 export default function Footer({ flush = false }) {
@@ -33,7 +33,7 @@ export default function Footer({ flush = false }) {
             </li>
             <li className="leading-relaxed">
               <span className="text-slate-500">Location: </span>
-              Knovixgadgets, Vadapalani, Chennai, Tamil Nadu, India – 600026
+              Chennai, Tamil Nadu
             </li>
           </ul>
           <div className="flex items-center gap-3 mt-4">

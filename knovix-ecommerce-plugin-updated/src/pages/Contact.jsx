@@ -7,17 +7,17 @@ const details = [
   {
     icon: LocationIcon,
     label: 'Store Address',
-    lines: ['Knovix Gadgets, No. 24, 2nd Floor, Ambattur Industrial Estate Road', 'Chennai, Tamil Nadu 600058, India']
+    lines: ['Knovixgadgets', 'Chennai, Tamil Nadu, India']
   },
   {
     icon: PhoneIcon,
     label: 'Phone / WhatsApp',
-    lines: ['+91 98765 43210', '+91 91234 56789']
+    lines: ['+91 94474 77665']
   },
   {
     icon: MailIcon,
     label: 'Email',
-    lines: ['support@knovixgadgets.in', 'orders@knovixgadgets.in']
+    lines: ['knovixgadgets@gmail.com']
   },
   {
     icon: ClockIcon,
@@ -63,7 +63,7 @@ export default function Contact() {
           {/* Map placeholder */}
           <div className="card overflow-hidden">
             <div className="h-40 bg-gradient-to-br from-brand-50 to-teal-50 flex items-center justify-center text-slate-400 text-xs">
-              Map — Ambattur Industrial Estate, Chennai
+              Map — Chennai, Tamil Nadu
             </div>
           </div>
         </div>

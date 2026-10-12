@@ -109,14 +109,16 @@ function readRecentViewed() {
 
 function TrustStrip({ freeMin }) {
   return (
-    <section className="container-px max-w-7xl mx-auto pt-2.5">
-      <div className="panel !py-3 grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
+    <div className="mt-3 rounded-xl bg-amber-50 ring-1 ring-amber-200 px-3 py-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
         {trustBadges.map(({ icon, title, sub, href }) => {
           const Icon = BADGE_ICONS[icon] || CheckCircleIcon
-          const text = String(sub || '').replace('{freeMin}', freeMin ?? '')
+          const text = String(sub || '').includes('{freeMin}') && freeMin == null
+            ? 'On eligible orders'
+            : String(sub || '').replace('{freeMin}', freeMin ?? '')
           const inner = (
             <>
-              <span className="w-9 h-9 shrink-0 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center">
+              <span className="w-9 h-9 shrink-0 rounded-full bg-white text-amber-700 flex items-center justify-center">
                 <Icon className="w-[18px] h-[18px]" />
               </span>
               <span className="leading-tight min-w-0">
@@ -132,7 +134,7 @@ function TrustStrip({ freeMin }) {
           )
         })}
       </div>
-    </section>
+    </div>
   )
 }
 
@@ -240,7 +242,6 @@ export default function Home() {
 
       <div className="page-bg pb-2">
       {homeShow.banners && <HomeBannerSlider slides={homeBanners} />}
-      {homeShow.trustBadges && <TrustStrip freeMin={freeMin} />}
       {homeShow.lookingRail && !productsLoading && !productsError && (
         <MiniProductRail title={railTitle} products={railProducts} />
       )}
@@ -301,16 +302,16 @@ export default function Home() {
           instead of a single static banner. */}
       {homeShow.deals && (
       <section className="container-px max-w-7xl mx-auto py-2.5"><div className="panel">
-        <div className="rounded-xl overflow-hidden flash-sale-bg text-white">
+        <div className="rounded-xl overflow-hidden flash-sale-bg text-ink-900">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3">
             <div>
-              <p className="inline-flex items-center gap-1 text-[11px] font-bold tracking-wide bg-amber-400 text-ink-900 rounded-full px-2.5 py-0.5">⚡ FLASH SALE</p>
-              <h2 className="text-lg sm:text-xl font-bold mt-0.5">Mega Deals on Top Gadgets!</h2>
+              <p className="inline-flex items-center gap-1 text-[11px] font-bold tracking-wide bg-ink-900 text-amber-300 rounded-full px-2.5 py-0.5">⚡ FLASH SALE</p>
+              <h2 className="text-lg sm:text-xl font-extrabold mt-0.5 text-ink-900">Mega Deals on Top Gadgets!</h2>
             </div>
             <div className="flex items-center gap-2 text-xs sm:text-sm">
-              <span className="font-medium hidden sm:inline">Deal ends in</span>
+              <span className="font-semibold hidden sm:inline">Deal ends in</span>
               {[['HH', h], ['MM', m], ['SS', s]].map(([label, val]) => (
-                <span key={label} className="bg-white/10 ring-1 ring-white/25 backdrop-blur-sm rounded-md px-2.5 py-1.5 min-w-[42px] text-center">
+                <span key={label} className="bg-ink-900 text-white rounded-md px-2.5 py-1.5 min-w-[42px] text-center shadow-sm">
                   <span className="font-bold font-mono text-sm sm:text-base">{String(val).padStart(2, '0')}</span>
                   <span className="block text-[9px] uppercase leading-none mt-0.5">{label}</span>
                 </span>
@@ -318,6 +319,8 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {homeShow.trustBadges && <TrustStrip freeMin={freeMin} />}
 
         {productsError ? (
           <div className="mt-4"><LoadErrorNotice label="deals" onRetry={loadProducts} /></div>

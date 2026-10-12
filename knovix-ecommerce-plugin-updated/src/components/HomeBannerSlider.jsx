@@ -57,6 +57,7 @@ export default function HomeBannerSlider({ slides = [] }) {
               aria-hidden="true"
               loading={i === 0 ? 'eager' : 'lazy'}
               style={{ objectPosition: sl.imagePosition || 'center center' }}
+              onError={(e) => { e.currentTarget.style.display = 'none' }}
               className={`pointer-events-none absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${i === active ? 'opacity-100' : 'opacity-0'}`}
             />
           </picture>

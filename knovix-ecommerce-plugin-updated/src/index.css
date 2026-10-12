@@ -88,13 +88,12 @@ h1,h2,h3,h4 { @apply font-display; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
-/* Flash sale banner: Knovix peacock mix — deep navy into brand teal, with a
-   soft light bloom and a hint of the gold used for star ratings. */
+/* Flash sale banner: bright yellow → orange gradient with a soft light bloom. */
 .flash-sale-bg {
   background:
-    radial-gradient(circle at 10% 15%, rgba(82, 174, 199, 0.45), transparent 45%),
-    radial-gradient(circle at 92% 85%, rgba(250, 184, 22, 0.18), transparent 40%),
-    linear-gradient(110deg, #0f2530 0%, #154451 35%, #247085 70%, #328ca4 100%);
+    radial-gradient(circle at 8% 10%, rgba(255, 255, 255, 0.55), transparent 45%),
+    radial-gradient(circle at 95% 90%, rgba(255, 120, 20, 0.35), transparent 45%),
+    linear-gradient(110deg, #ffd23f 0%, #fab816 45%, #ff9a1f 100%);
 }
 
 /* Checkout thank-you popup progress bar */

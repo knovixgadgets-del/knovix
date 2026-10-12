@@ -48,9 +48,9 @@
   --hb-btn-pad-x: 26px;
 
   /* ── banner BOX size (picture always covers it, centred) ── */
-  --hb-height: 210px;                 /* mobile */
-  --hb-height-md: 300px;              /* tablet */
-  --hb-height-lg: 380px;              /* desktop */
+  --hb-height: 320px;                 /* mobile */
+  --hb-height-md: 400px;              /* tablet */
+  --hb-height-lg: 480px;              /* desktop */
 
   /* ── pill dots under the banner ── */
   --hb-dash-color: #c3d0d6;
