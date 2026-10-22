@@ -18,7 +18,7 @@ function useResendTimer() {
 // signup. A collapsible email/password form underneath still exists,
 // mainly so the admin/demo account can get into /admin.
 export default function Login() {
-  const { requestOtp, verifyOtp, login } = useAuth()
+  const { requestOtp, verifyOtp, updateProfile, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -35,8 +35,8 @@ export default function Login() {
   const otpInputRef = useRef(null)
 
   const [showPasswordForm, setShowPasswordForm] = useState(false)
-  const [pwEmail, setPwEmail] = useState('demo@knovix.com')
-  const [pwPassword, setPwPassword] = useState('demo1234')
+  const [pwEmail, setPwEmail] = useState('')
+  const [pwPassword, setPwPassword] = useState('')
 
   function goToDestination(user) {
     const dest = location.state?.from?.pathname || (user.role === 'admin' ? '/admin' : '/')
@@ -195,7 +195,9 @@ export default function Login() {
             setLoading(true)
             setError('')
             try {
-              const user = await verifyOtp(phone.replace(/\D/g, ''), otp, name)
+              // The OTP was already consumed by the first verify (single-use), and
+              // that call already signed the customer in - so just save the name.
+              const user = await updateProfile({ name: name.trim() })
               goToDestination(user)
             } catch (err) {
               setError(err.message)
@@ -246,9 +248,6 @@ export default function Login() {
             <button disabled={loading} className="btn-outline w-full">
               {loading ? 'Logging in…' : 'Login'}
             </button>
-            <p className="text-xs text-slate-400 text-center">
-              Demo accounts — Customer: demo@knovix.com / demo1234 · Admin: admin@knovix.com / admin123
-            </p>
           </form>
         )}
       </div>

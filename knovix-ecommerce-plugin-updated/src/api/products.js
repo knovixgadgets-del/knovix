@@ -20,10 +20,9 @@ function toArray(response) {
 }
 
 // Every function below talks to the live WordPress/Knovix API only — there
-// is no local/demo-data fallback. If a request fails, the error is thrown
-// (or an empty list returned for list endpoints) and it's up to the calling
-// page to show its own loading/error/empty state, rather than silently
-// showing dummy products in place of real store data.
+// is no local/demo-data fallback. If a request fails the error is thrown and
+// it's up to the calling page to show its own loading/error/empty state,
+// rather than silently showing dummy products in place of real store data.
 
 // Placeholder/seed entries (WooCommerce sample data, "Test Product", etc.)
 // sometimes linger in a store's catalog from setup. Filter them out here so
@@ -37,13 +36,12 @@ function isDummyProduct(p) {
   return DUMMY_NAME_PATTERN.test(name)
 }
 
+// NOTE: these two deliberately let request errors propagate. They used to catch
+// them and return [], which made a dead/unreachable backend look like an empty
+// store: no error message, no Retry button, just blank sections. Every caller
+// already has a .catch() that shows its own error / retry UI.
 export async function getCategories() {
-  try {
-    return toArray(await apiFetch('/categories'))
-  } catch (err) {
-    console.error('[knovix] /categories failed:', err.message)
-    return []
-  }
+  return toArray(await apiFetch('/categories'))
 }
 
 export async function getProducts(filters = {}) {
@@ -58,15 +56,10 @@ export async function getProducts(filters = {}) {
 
   const qs = new URLSearchParams(cleanFilters).toString()
 
-  try {
-    const items = toArray(await apiFetch(
-      qs ? `/products?${qs}` : '/products'
-    ))
-    return items.filter((p) => !isDummyProduct(p))
-  } catch (err) {
-    console.error('[knovix] /products failed:', err.message)
-    return []
-  }
+  const items = toArray(await apiFetch(
+    qs ? `/products?${qs}` : '/products'
+  ))
+  return items.filter((p) => !isDummyProduct(p))
 }
 
 export async function getProduct(id) {

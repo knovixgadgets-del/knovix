@@ -15,11 +15,13 @@ export default function ProductForm() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    getCategories().then((items) => {
-      setCategories(items)
-      // default a new product to the first real category once it's loaded
-      setForm((f) => (!isEdit && !f.category && items[0] ? { ...f, category: items[0].id } : f))
-    })
+    getCategories()
+      .then((items) => {
+        setCategories(items)
+        // default a new product to the first real category once it's loaded
+        setForm((f) => (!isEdit && !f.category && items[0] ? { ...f, category: items[0].id } : f))
+      })
+      .catch(() => setError("Couldn't load categories. Check your connection and reload."))
 
     if (isEdit) {
       getProduct(id)

@@ -1,5 +1,56 @@
 # Knovix Gadgets — E-commerce Frontend
 
+## Bug-fix pass (latest) — why the "backend" didn't load, and what was fixed
+
+**How to test the backend in 10 seconds:** open `<VITE_API_BASE_URL>/wp-json/knovix/v1/health` in a
+browser. `{"ok":true,...}` = plugin is installed and reachable. HTML / 404 / redirect = wrong
+`VITE_API_BASE_URL` or plugin not active. Then open `.../wp-json/knovix/v1/products` — you should see JSON.
+
+### Frontend
+- `api/products.js`: `getProducts()` / `getCategories()` swallowed every error and returned `[]`, so an
+  unreachable backend looked like an empty store — no error message, no Retry button, blank sections.
+  Errors now propagate and the existing error/Retry UI shows.
+- `api/client.js`: detects a 200 response that isn't JSON (HTML page from a wrong domain/redirect) and
+  reports it; only retries transient failures; sends the token in `X-Knovix-Token` as well as
+  `Authorization` (see backend note); warns in the console if `VITE_API_BASE_URL` is empty.
+- `api/auth.js` + `AuthContext`: guests (no token) no longer fire a blocking `/auth/session` call; the
+  loading flag is always cleared (previously `/checkout`, `/account`, `/admin` stayed blank for 25 s+ when
+  the server was slow); logout works even if the server is unreachable; expired tokens are dropped.
+- `Login.jsx`: **new phone customers were stuck** — the "What should we call you?" step re-submitted the
+  already-used one-time OTP and always failed with "code expired". It now calls a new `/auth/profile`
+  endpoint. Removed pre-filled demo credentials from the live login form.
+- Removed duplicated fetch code (copy/paste leftovers) in `Wishlist`, `Dashboard`, `ProductsList`,
+  `OrdersList`; added loading/error states; admin actions now show errors instead of failing silently.
+- Added a top-level `ErrorBoundary` (a single render error used to blank the whole site).
+- `vite.config.js`: now actually supports `VITE_BASE_PATH` (the README said it did).
+- Deleted unused `src/api/wordpress.js` (duplicate, unsafe API client).
+
+### WordPress plugin (`knovix-api-bridge`)
+- **Authorization header stripped by LiteSpeed/FastCGI hosts (Hostinger):** logins "worked" but the session
+  was never recognised, orders returned 401, admin failed. Plugin now also accepts `X-Knovix-Token`
+  and `REDIRECT_HTTP_AUTHORIZATION`.
+- **Token check was O(number of users) with a slow password hash on every request** — now one indexed
+  SHA-256 lookup. (Existing logged-in customers will simply need to log in once again.)
+- CORS rewritten: multiple allowed origins (`KNOVIX_FRONTEND_ORIGIN` may be comma-separated), correct
+  `Origin` echo + `Vary`, `X-Knovix-Token` allowed, and preflight `OPTIONS` answered with a clean 204.
+- New `GET /health` route; if WooCommerce is inactive the API now returns a clear 503 JSON instead of a fatal error.
+- New `POST /auth/profile` (sets the customer's name after OTP signup).
+- `/products` returned at most 24 products; now returns the catalogue (limit 500, `?limit=` supported).
+- Editing a product no longer re-publishes drafts, and no longer re-downloads the same image into the
+  media library on every save.
+- Signup now validates email/password length.
+
+### If it still doesn't load
+1. `.../wp-json/knovix/v1/health` must return JSON (see above). Use the site's final domain — temporary
+   `*.hostingersite.com` addresses often redirect after a domain is connected, and browsers refuse
+   redirects on cross-origin API calls.
+2. WooCommerce must be active, and Settings > Permalinks must not be "Plain" (or use `/index.php?rest_route=`).
+3. Security/cache plugins (Wordfence, "Disable REST API", LiteSpeed cache) must not block `/wp-json/knovix/`.
+4. Set `define('KNOVIX_FRONTEND_ORIGIN', 'https://knovixgadgets.in,https://www.knovixgadgets.in');` in wp-config.php.
+5. Don't upload `dist/` over the WordPress root: put it on its own domain/subdomain or sub-folder (`VITE_BASE_PATH`).
+
+# Knovix Gadgets — E-commerce Frontend
+
 A full storefront + admin panel built in the Knovix Gadgets theme (teal/dark,
 rounded cards, the layout from the reference screenshot): home page, shop with
 filters, product detail, cart, wishlist, checkout, auth, order history, and an

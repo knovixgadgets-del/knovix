@@ -16,10 +16,11 @@ WooCommerce's PHP functions directly.
    `wp-content/plugins/knovix-api-bridge`.
 2. Activate **Knovix API Bridge** under Plugins in wp-admin.
 3. (Optional but recommended) In `wp-config.php`, restrict CORS to your
-   real frontend domain instead of the `*` default:
+   real frontend domain(s) instead of the `*` default (comma-separate several):
    ```php
-   define('KNOVIX_FRONTEND_ORIGIN', 'https://yourfrontend.com');
+   define('KNOVIX_FRONTEND_ORIGIN', 'https://yourfrontend.com,https://www.yourfrontend.com');
    ```
+   Check the install by opening `/wp-json/knovix/v1/health` — it must return `{"ok":true,...}`.
 4. For phone/OTP login, get your API key from https://renflair.in and add
    it to `wp-config.php`:
    ```php
@@ -33,12 +34,14 @@ WooCommerce's PHP functions directly.
 ## What it adds
 | Endpoint | Notes |
 |---|---|
+| `GET /health` | install check: `{ok, woocommerce}` |
 | `GET /categories` | from WooCommerce product categories |
 | `GET /products` | supports `?category=&search=&sort=` |
 | `GET /products/:id` | |
 | `POST /products` · `PATCH /products/:id` · `DELETE /products/:id` | admin only (`manage_woocommerce`) |
 | `POST /auth/signup`, `/auth/login`, `/auth/logout`, `GET /auth/session` | issues a bearer token stored in WP user meta, no separate JWT plugin needed |
 | `POST /auth/otp/request` | body `{ phone }` — sends an OTP (4 digits by default) via the Renflair SMS API, 45s resend cooldown; response includes `otpLength` |
+| `POST /auth/profile` | logged-in; body `{ name }` — sets the display name after a new OTP signup |
 | `POST /auth/otp/verify` | body `{ phone, otp, name? }` — first successful verify for a number creates the account; returns the same `{ token, ... }` shape as `/auth/login` |
 | `POST /orders` | creates a real WooCommerce order; works for guests or logged-in customers |
 | `GET /orders`, `GET /orders/:id` | customers see only their own orders; admins see all |

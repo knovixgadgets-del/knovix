@@ -9,37 +9,73 @@ if (!defined('ABSPATH')) exit;
 
 const KNOVIX_TOKEN_TTL = 30 * DAY_IN_SECONDS;
 
+/**
+ * Tokens are random 48-char strings, so a plain SHA-256 is enough to store them
+ * safely AND lets us find the owner with one indexed lookup. (The old code stored
+ * a slow bcrypt/phpass hash and then looped over EVERY user with a token, running
+ * a password check for each one on every single API request - which gets slower
+ * with each customer and eventually times out the whole storefront.)
+ */
+function knovix_hash_token($token) {
+    return hash('sha256', (string) $token);
+}
+
 function knovix_issue_token($user_id) {
     $token = wp_generate_password(48, false);
-    update_user_meta($user_id, '_knovix_api_token', wp_hash_password($token));
+    update_user_meta($user_id, '_knovix_api_token', knovix_hash_token($token));
     update_user_meta($user_id, '_knovix_api_token_expires', time() + KNOVIX_TOKEN_TTL);
     return $token;
+}
+
+/**
+ * Read the bearer token from the request. Shared hosts running LiteSpeed or
+ * Apache-FastCGI (Hostinger, etc.) frequently strip the standard Authorization
+ * header before PHP sees it - every logged-in request then looks anonymous, so
+ * the session never restores, orders 401 and wp-admin style actions fail.
+ * We therefore also accept X-Knovix-Token (never stripped) and the common
+ * server-variable fallbacks.
+ */
+function knovix_get_bearer_token() {
+    $candidates = [];
+
+    foreach (['HTTP_X_KNOVIX_TOKEN'] as $key) {
+        if (!empty($_SERVER[$key])) return trim((string) $_SERVER[$key]);
+    }
+
+    foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $key) {
+        if (!empty($_SERVER[$key])) $candidates[] = (string) $_SERVER[$key];
+    }
+
+    if (empty($candidates) && function_exists('getallheaders')) {
+        foreach ((array) getallheaders() as $name => $value) {
+            if (strtolower($name) === 'authorization') { $candidates[] = (string) $value; break; }
+            if (strtolower($name) === 'x-knovix-token' && $value) return trim((string) $value);
+        }
+    }
+
+    foreach ($candidates as $header) {
+        if (stripos($header, 'Bearer ') === 0) return trim(substr($header, 7));
+    }
+    return '';
 }
 
 function knovix_authenticate_bearer_token($user_id) {
     if (!empty($user_id)) return $user_id; // already resolved by something else
 
-    $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? $_SERVER['HTTP_AUTHORIZATION'] : '';
-    if (!$auth_header || stripos($auth_header, 'Bearer ') !== 0) return $user_id;
+    $token = knovix_get_bearer_token();
+    if ($token === '') return $user_id;
 
-    $token = trim(substr($auth_header, 7));
-    if (!$token) return $user_id;
-
-    // Tokens are stored hashed, so we must check them against every user's
-    // hash. Fine for small/medium stores; for very large ones, store a
-    // lookup index (token prefix -> user id) instead.
     global $wpdb;
-    $rows = $wpdb->get_results(
-        "SELECT user_id, meta_value FROM {$wpdb->usermeta} WHERE meta_key = '_knovix_api_token'"
-    );
-    foreach ($rows as $row) {
-        if (wp_check_password($token, $row->meta_value)) {
-            $expires = (int) get_user_meta($row->user_id, '_knovix_api_token_expires', true);
-            if ($expires < time()) return $user_id; // expired
-            return (int) $row->user_id;
-        }
-    }
-    return $user_id;
+    $found = $wpdb->get_var($wpdb->prepare(
+        "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '_knovix_api_token' AND meta_value = %s LIMIT 1",
+        knovix_hash_token($token)
+    ));
+    if (!$found) return $user_id;
+
+    $expires = (int) get_user_meta($found, '_knovix_api_token_expires', true);
+    if ($expires < time()) return $user_id; // expired
+
+    return (int) $found;
 }
 
 function knovix_current_user_response($user) {
@@ -77,6 +113,8 @@ function knovix_register_auth_routes() {
             $email = sanitize_email($req->get_param('email'));
             $password = (string) $req->get_param('password');
 
+            if (!is_email($email)) return knovix_error('Please enter a valid email address.', 422);
+            if (strlen($password) < 6) return knovix_error('Password must be at least 6 characters.', 422);
             if (email_exists($email)) return knovix_error('An account with this email already exists', 409);
 
             $user_id = wp_create_user($email, $password, $email);
@@ -96,6 +134,22 @@ function knovix_register_auth_routes() {
             delete_user_meta(get_current_user_id(), '_knovix_api_token');
             delete_user_meta(get_current_user_id(), '_knovix_api_token_expires');
             return ['success' => true];
+        }
+    ]);
+
+    // Lets a brand-new phone/OTP customer set their name right after verifying.
+    // (The OTP is single-use, so the frontend cannot re-send it just to add a name.)
+    register_rest_route(KNOVIX_API_NS, '/auth/profile', [
+        'methods'  => 'POST',
+        'permission_callback' => 'is_user_logged_in',
+        'callback' => function (WP_REST_Request $req) {
+            $name = trim(sanitize_text_field((string) $req->get_param('name')));
+            if ($name === '' || mb_strlen($name) > 80) {
+                return knovix_error('Please enter your name.', 422);
+            }
+            $user_id = get_current_user_id();
+            wp_update_user(['ID' => $user_id, 'display_name' => $name, 'first_name' => $name]);
+            return knovix_current_user_response(get_user_by('id', $user_id));
         }
     ]);
 

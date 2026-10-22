@@ -118,7 +118,16 @@ function knovix_register_product_routes()
 
                 'status' => 'publish',
 
-                'limit' => 24,
+                /*
+                 * The storefront has no pagination, so return the whole
+                 * catalogue (capped for safety). It used to be a hard 24,
+                 * which silently hid every product after the 24th.
+                 * ?limit=N lets a client ask for fewer.
+                 */
+                'limit' => min(
+                    500,
+                    max(1, (int) ($request->get_param('limit') ?: 500))
+                ),
 
                 'return' => 'objects',
 
@@ -678,18 +687,42 @@ function knovix_apply_product_fields(
             $request->get_param('image')
         );
 
+        /*
+         * The admin form always re-sends the current image URL on edit. Only
+         * download it when it is a NEW external URL - otherwise every save
+         * would add another copy to the media library (and fail outright if
+         * the image is a localhost/private URL).
+         */
+        $current_url = $product->get_image_id()
+            ? wp_get_attachment_image_url($product->get_image_id(), 'large')
+            : '';
 
-        $attachment_id =
-            knovix_sideload_image_if_url(
-                $image_url
-            );
+        $uploads = wp_get_upload_dir();
+        $is_local = !empty($uploads['baseurl'])
+            && strpos((string) $image_url, (string) $uploads['baseurl']) === 0;
 
+        if (
+            $image_url &&
+            $image_url !== $current_url &&
+            !$is_local &&
+            strpos((string) $image_url, 'placeholder') === false
+        ) {
+            $attachment_id =
+                knovix_sideload_image_if_url(
+                    $image_url
+                );
 
-        if ($attachment_id) {
-
-            $product->set_image_id(
-                $attachment_id
-            );
+            if ($attachment_id) {
+                $product->set_image_id(
+                    $attachment_id
+                );
+            }
+        } elseif ($is_local && $image_url !== $current_url) {
+            // An image already in this site's media library: reuse it.
+            $existing = attachment_url_to_postid($image_url);
+            if ($existing) {
+                $product->set_image_id($existing);
+            }
         }
     }
 
@@ -700,7 +733,11 @@ function knovix_apply_product_fields(
     |--------------------------------------------------------------------------
     */
 
-    $product->set_status('publish');
+    // New products go live immediately; editing must not re-publish a product
+    // the owner deliberately set to draft/private in wp-admin.
+    if (!$product->get_id()) {
+        $product->set_status('publish');
+    }
 }
 
 

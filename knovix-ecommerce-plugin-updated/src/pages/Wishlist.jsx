@@ -7,13 +7,35 @@ import { useWishlist } from '../context/WishlistContext'
 export default function Wishlist() {
   const { ids } = useWishlist()
   const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
 
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    setError(false)
+    getProducts()
+      .then((items) => { if (alive) setProducts(items) })
+      .catch(() => { if (alive) setError(true) })
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [retryKey])
 
-  useEffect(() => { getProducts().then(setProducts).catch(() => setProducts([])) }, [])
+  const items = products.filter((p) => ids.map(String).includes(String(p.id)))
 
-  useEffect(() => { getProducts().then(setProducts) }, [])
+  if (loading && ids.length > 0) {
+    return <div className="container-px max-w-3xl mx-auto py-20 text-center text-slate-500 text-sm">Loading your wishlist…</div>
+  }
 
-  const items = products.filter((p) => ids.includes(p.id))
+  if (error && ids.length > 0) {
+    return (
+      <div className="container-px max-w-3xl mx-auto py-20 text-center">
+        <p className="text-slate-600 text-sm">Couldn't load your wishlist right now.</p>
+        <button type="button" onClick={() => setRetryKey((k) => k + 1)} className="btn-primary mt-4 inline-flex">Retry</button>
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (

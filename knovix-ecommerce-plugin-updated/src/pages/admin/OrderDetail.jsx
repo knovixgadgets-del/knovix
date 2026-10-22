@@ -12,9 +12,16 @@ export default function OrderDetail() {
 
   useEffect(() => { getOrder(id).then(setOrder).catch(() => setError(true)) }, [id])
 
+  const [statusError, setStatusError] = useState('')
+
   async function handleStatus(status) {
-    const updated = await updateOrderStatus(id, status)
-    setOrder(updated)
+    setStatusError('')
+    try {
+      const updated = await updateOrderStatus(id, status)
+      setOrder(updated)
+    } catch (err) {
+      setStatusError(err.message || "Couldn't update the status.")
+    }
   }
 
 
@@ -38,7 +45,7 @@ export default function OrderDetail() {
         {order.items.map((i) => (
           <div key={i.id} className="flex justify-between text-sm py-1">
             <span>{i.name} × {i.qty}</span>
-            <span>₹{i.price * i.qty}</span>
+            <span>₹{(Number(i.price) || 0) * (Number(i.qty) || 0)}</span>
           </div>
         ))}
         <div className="flex justify-between text-sm font-semibold border-t pt-2 mt-2">
@@ -48,6 +55,7 @@ export default function OrderDetail() {
 
       <div className="card p-5">
         <h2 className="font-semibold mb-3 text-sm">Update Status</h2>
+        {statusError && <p className="text-red-600 text-sm bg-red-50 rounded-md px-3 py-2 mb-3">{statusError}</p>}
         <div className="flex flex-wrap gap-2">
           {statuses.map((s) => (
             <button

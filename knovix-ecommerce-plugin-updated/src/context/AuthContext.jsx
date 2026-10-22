@@ -8,10 +8,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    authApi.getSession().then((u) => {
-      setUser(u)
-      setLoading(false)
-    })
+    let alive = true
+    Promise.resolve(authApi.getSession())
+      .then((u) => { if (alive) setUser(u || null) })
+      .catch(() => { if (alive) setUser(null) })
+      .finally(() => { if (alive) setLoading(false) }) // never leave route guards blank forever
+    return () => { alive = false }
   }, [])
 
   async function login(email, password) {
@@ -32,13 +34,18 @@ export function AuthProvider({ children }) {
     setUser(u)
     return u
   }
+  async function updateProfile(payload) {
+    const u = await authApi.updateProfile(payload)
+    setUser((prev) => ({ ...(prev || {}), ...u }))
+    return u
+  }
   async function logout() {
     await authApi.logout()
     setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, requestOtp, verifyOtp, logout, isAdmin: user?.role === 'admin' }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, requestOtp, verifyOtp, updateProfile, logout, isAdmin: user?.role === 'admin' }}>
       {children}
     </AuthContext.Provider>
   )
