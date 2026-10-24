@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Knovix API Bridge
  * Description: REST API bridge between the Knovix React frontend and WooCommerce.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Requires Plugins: woocommerce
  */
 
@@ -20,6 +20,7 @@ define('KNOVIX_API_NS', 'knovix/v1');
 // KNOVIX_FREE_SHIPPING_MIN was removed: the free-shipping minimum now comes only from
 // WooCommerce > Settings > Shipping (Free shipping > Minimum order amount).
 define('KNOVIX_SHIPPING_FEE', 49);
+define('KNOVIX_PLUGIN_FILE', __FILE__);
 
 
 /*
@@ -33,6 +34,7 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/otp-auth.php';
 require_once __DIR__ . '/includes/products.php';
 require_once __DIR__ . '/includes/orders.php';
+require_once __DIR__ . '/includes/banners.php';
 
 
 /*
@@ -108,6 +110,24 @@ add_action('rest_api_init', function () {
 
     knovix_register_order_routes();
 
+    knovix_register_banner_routes();
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| WooCommerce HPOS compatibility
+|--------------------------------------------------------------------------
+|
+| Without this declaration WooCommerce flags the plugin as incompatible with
+| "High-performance order storage" and warns / blocks the setting.
+*/
+
+add_action('before_woocommerce_init', function () {
+    if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+    }
 });
 
 
@@ -121,7 +141,7 @@ add_action('init', function () {
 
     register_post_status('wc-shipped', [
         'label'                     => 'Shipped',
-        'public'                    => true,
+        'public'                    => false,
         'exclude_from_search'       => false,
         'show_in_admin_all_list'    => true,
         'show_in_admin_status_list' => true,
@@ -196,7 +216,21 @@ add_filter('wc_order_statuses', function ($statuses) {
 function knovix_allowed_origins() {
     if (!defined('KNOVIX_FRONTEND_ORIGIN') || !KNOVIX_FRONTEND_ORIGIN) return ['*'];
     $list = array_map(function ($o) { return rtrim(trim($o), '/'); }, explode(',', (string) KNOVIX_FRONTEND_ORIGIN));
-    return array_values(array_filter($list));
+    $list = array_values(array_filter($list));
+
+    // The production storefront is always allowed, and every configured https origin
+    // is also allowed with / without "www." - a very common reason the site loaded
+    // nothing: wp-config listed https://knovixgadgets.in but visitors arrive on
+    // https://www.knovixgadgets.in, so the browser blocked every API call.
+    $list[] = 'https://knovixgadgets.in';
+    $list[] = 'https://www.knovixgadgets.in';
+    foreach ($list as $o) {
+        if (preg_match('#^(https?://)(www\.)?(.+)$#i', $o, $m)) {
+            $list[] = $m[1] . $m[3];
+            $list[] = $m[1] . 'www.' . $m[3];
+        }
+    }
+    return array_values(array_unique($list));
 }
 
 function knovix_send_cors_headers() {
@@ -216,8 +250,13 @@ function knovix_send_cors_headers() {
         return; // unknown origin: send no CORS headers at all
     }
 
+    // Echo whatever headers the browser's preflight asks for, so a new custom header
+    // in the frontend never gets blocked again.
+    $asked = isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']) ? (string) $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] : '';
+    $asked = preg_replace('/[^A-Za-z0-9\-_, ]/', '', $asked);
+
     header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Knovix-Token');
+    header('Access-Control-Allow-Headers: ' . ($asked !== '' ? $asked : 'Content-Type, Authorization, X-Knovix-Token, Accept'));
     header('Access-Control-Expose-Headers: X-WP-Total, X-WP-TotalPages');
     header('Access-Control-Max-Age: 86400');
 }
@@ -256,3 +295,28 @@ add_action('init', function () {
         exit;
     }
 }, 1);
+
+
+/*
+|--------------------------------------------------------------------------
+| Never let a host/page cache serve stale API data
+|--------------------------------------------------------------------------
+|
+| LiteSpeed / Hostinger page caches (and CDNs) can cache GET /wp-json/ responses,
+| so edits made in WooCommerce (new products, price, stock, banners) did not show
+| on the storefront, and a cached response without CORS headers made the browser
+| reject it. Mark every Knovix response as uncacheable.
+*/
+
+add_filter('rest_post_dispatch', function ($result, $server, $request) {
+    if (strpos((string) $request->get_route(), '/' . KNOVIX_API_NS) !== 0) return $result;
+    if ($result instanceof WP_REST_Response) {
+        $result->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $result->header('X-LiteSpeed-Cache-Control', 'no-cache');
+    }
+    return $result;
+}, 10, 3);
+
+if (!defined('DONOTCACHEPAGE') && isset($_SERVER['REQUEST_URI']) && strpos((string) $_SERVER['REQUEST_URI'], '/wp-json/' . KNOVIX_API_NS) !== false) {
+    define('DONOTCACHEPAGE', true);
+}

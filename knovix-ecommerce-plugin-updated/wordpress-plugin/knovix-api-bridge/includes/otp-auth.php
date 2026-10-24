@@ -192,6 +192,7 @@ function knovix_register_otp_routes() {
                 update_user_meta($user_id, 'billing_phone', $phone);
 
                 $user = get_user_by('id', $user_id);
+                if ($user && get_role('customer')) $user->set_role('customer');
             }
 
             $token = knovix_issue_token($user->ID);

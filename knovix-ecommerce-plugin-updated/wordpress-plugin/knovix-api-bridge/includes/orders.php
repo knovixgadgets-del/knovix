@@ -65,7 +65,7 @@ function knovix_register_order_routes() {
         'callback' => function (WP_REST_Request $req) {
             $customer = $req->get_param('customer') ?: [];
             $items = $req->get_param('items') ?: [];
-            $payment = $req->get_param('payment') ?: 'cod';
+            $payment = sanitize_key((string) ($req->get_param('payment') ?: 'cod')) ?: 'cod';
 
             if (empty($items)) return knovix_error('Order must contain at least one item', 400);
 
@@ -82,6 +82,18 @@ function knovix_register_order_routes() {
                     return knovix_error('An item in your cart is no longer available. Please review your cart.', 400);
                 }
                 $qty   = max(1, (int) ($line['qty'] ?? 1));
+
+                // Stock check: the old code let customers order more than was in stock.
+                if (!$product->is_in_stock()) {
+                    return knovix_error($product->get_name() . ' is out of stock. Please remove it from your cart.', 400);
+                }
+                if ($product->managing_stock() && !$product->backorders_allowed()) {
+                    $available = (int) $product->get_stock_quantity();
+                    if ($qty > $available) {
+                        return knovix_error('Only ' . max(0, $available) . ' left of ' . $product->get_name() . '. Please reduce the quantity.', 400);
+                    }
+                }
+
                 $total = (float) $product->get_price() * $qty;
                 $subtotal += $total;
                 $lines[] = ['product' => $product, 'qty' => $qty, 'total' => $total];

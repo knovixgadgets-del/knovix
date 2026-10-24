@@ -28,38 +28,62 @@ function knovix_public_permission() {
  */
 function knovix_format_product($product) {
     if (!$product) return null;
-    $image_id = $product->get_image_id();
-    $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'large') : wc_placeholder_img_src('large');
 
-    // Gallery: featured image first, then any WooCommerce product gallery
-    // images. Powers the multi-image gallery on the product detail page —
-    // 'image' (singular) is kept as-is for existing callers/backwards
-    // compatibility and is always images[0].
+    // Image URL that can never come back as false/empty: a missing file on disk made
+    // wp_get_attachment_image_url() return false, and the storefront then rendered a
+    // broken card (or crashed on image.startsWith).
+    $placeholder = wc_placeholder_img_src('large');
+    $image_id    = $product->get_image_id();
+    $image_url   = $image_id ? (wp_get_attachment_image_url($image_id, 'large') ?: wp_get_attachment_image_url($image_id, 'full')) : '';
+    if (!$image_url) $image_url = $placeholder;
+
+    // Gallery: featured image first, then any WooCommerce product gallery images.
+    // 'image' (singular) is always images[0].
     $gallery_ids = array_filter(array_unique(array_merge(
         [$image_id],
         $product->get_gallery_image_ids()
     )));
-    $images = array_values(array_filter(array_map(
-        fn($id) => wp_get_attachment_image_url($id, 'large'),
-        $gallery_ids
-    )));
-    if (empty($images)) {
-        $images = [$image_url];
+    $images = [];
+    foreach ($gallery_ids as $gid) {
+        $u = wp_get_attachment_image_url($gid, 'large') ?: wp_get_attachment_image_url($gid, 'full');
+        if ($u) $images[] = $u;
+    }
+    if (empty($images)) $images = [$image_url];
+
+    // First real category (WooCommerce's default "Uncategorized" is not a category
+    // the storefront shows, so skip it instead of reporting it as the category).
+    $category_slug = '';
+    $terms = get_the_terms($product->get_id(), 'product_cat');
+    if ($terms && !is_wp_error($terms)) {
+        foreach ($terms as $t) {
+            if ($t->slug !== 'uncategorized') { $category_slug = $t->slug; break; }
+        }
     }
 
-    $categories = wc_get_product_category_list($product->get_id(), ', ', '', '');
-    $terms = get_the_terms($product->get_id(), 'product_cat');
-    $category_slug = $terms && !is_wp_error($terms) ? $terms[0]->slug : '';
+    // get_price() is the price WooCommerce actually charges right now (it respects
+    // scheduled sales and variable products). The old code read the raw sale-price
+    // field, so an expired/scheduled sale showed a wrong price and an unpriced
+    // product showed Rs 0.
+    $price = (float) $product->get_price();
+    $mrp   = (float) $product->get_regular_price();
+    if ($mrp <= 0 || $mrp < $price) $mrp = $price;
+
+    if ($product->managing_stock()) {
+        $stock = max(0, (int) $product->get_stock_quantity());
+        if ($stock === 0 && $product->backorders_allowed()) $stock = 999;
+    } else {
+        $stock = $product->is_in_stock() ? 999 : 0;
+    }
 
     return [
         'id'          => (string) $product->get_id(),
         'name'        => $product->get_name(),
         'category'    => $category_slug,
-        'price'       => (float) ($product->get_sale_price() ?: $product->get_regular_price()),
-        'mrp'         => (float) $product->get_regular_price(),
+        'price'       => $price,
+        'mrp'         => $mrp,
         'rating'      => (float) $product->get_average_rating(),
         'reviews'     => (int) $product->get_review_count(),
-        'stock'       => $product->managing_stock() ? (int) $product->get_stock_quantity() : ($product->is_in_stock() ? 999 : 0),
+        'stock'       => $stock,
         'image'       => $image_url,
         'images'      => $images,
         'description' => wp_strip_all_tags($product->get_short_description() ?: $product->get_description()),
@@ -79,7 +103,7 @@ function knovix_format_order($order) {
             'name'  => $item->get_name(),
             'price' => (float) $order->get_item_total($item, false, false),
             'qty'   => (int) $item->get_quantity(),
-            'image' => $product ? wp_get_attachment_image_url($product->get_image_id(), 'thumbnail') : ''
+            'image' => $product ? ((string) wp_get_attachment_image_url($product->get_image_id(), 'thumbnail') ?: wc_placeholder_img_src('thumbnail')) : ''
         ];
     }
     return [

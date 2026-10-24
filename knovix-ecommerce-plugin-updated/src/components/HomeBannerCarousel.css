@@ -1,0 +1,97 @@
+/* Home banner carousel. Edit the variables to restyle. */
+.kbc {
+  --kbc-accent: var(--knovix-teal, #14b8a6);
+  --kbc-radius: 18px;
+  position: relative;
+  width: 100%;
+  max-width: 1400px;
+  margin: 12px auto;
+  overflow: hidden;
+  border-radius: var(--kbc-radius);
+  background: #0b1f2a;
+  /* every banner is 2:1, so nothing is ever cropped */
+  aspect-ratio: 2 / 1;
+  touch-action: pan-y;
+}
+
+.kbc-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+.kbc-slide {
+  flex: 0 0 100%;
+  height: 100%;
+}
+
+.kbc-link,
+.kbc-slide picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.kbc-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  user-select: none;
+}
+
+.kbc-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  color: #0b1f2a;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.kbc:hover .kbc-arrow { opacity: 1; }
+.kbc-prev { left: 12px; }
+.kbc-next { right: 12px; }
+
+.kbc-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.kbc-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: width 0.25s, background 0.25s;
+}
+.kbc-dot.is-active {
+  width: 24px;
+  background: var(--kbc-accent);
+}
+
+@media (max-width: 640px) {
+  .kbc { --kbc-radius: 14px; margin: 8px 10px; width: auto; }
+  .kbc-arrow { display: none; }
+  .kbc-dots { bottom: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kbc-track { transition: none; }
+}

@@ -20,10 +20,44 @@ function knovix_hash_token($token) {
     return hash('sha256', (string) $token);
 }
 
+/**
+ * Each login gets its OWN token row, so a customer logged in on their phone is not
+ * logged out when they sign in on a laptop (the old code kept a single token per
+ * user and overwrote it on every login). The 5 newest tokens per user are kept.
+ */
+const KNOVIX_MAX_TOKENS_PER_USER = 5;
+
+function knovix_token_expiry_key($hash) {
+    return '_knovix_api_token_exp_' . substr($hash, 0, 16);
+}
+
 function knovix_issue_token($user_id) {
     $token = wp_generate_password(48, false);
-    update_user_meta($user_id, '_knovix_api_token', knovix_hash_token($token));
+    $hash  = knovix_hash_token($token);
+
+    add_user_meta($user_id, '_knovix_api_token', $hash, false);
+    update_user_meta($user_id, knovix_token_expiry_key($hash), time() + KNOVIX_TOKEN_TTL);
+    // legacy single-token expiry, kept so tokens issued by older versions keep working
     update_user_meta($user_id, '_knovix_api_token_expires', time() + KNOVIX_TOKEN_TTL);
+
+    // Prune expired tokens and anything beyond the newest N.
+    $hashes = (array) get_user_meta($user_id, '_knovix_api_token', false);
+    $keep   = [];
+    foreach ($hashes as $h) {
+        $exp = (int) get_user_meta($user_id, knovix_token_expiry_key($h), true);
+        if ($exp && $exp < time()) {
+            delete_user_meta($user_id, '_knovix_api_token', $h);
+            delete_user_meta($user_id, knovix_token_expiry_key($h));
+        } else {
+            $keep[] = $h;
+        }
+    }
+    while (count($keep) > KNOVIX_MAX_TOKENS_PER_USER) {
+        $old = array_shift($keep);
+        delete_user_meta($user_id, '_knovix_api_token', $old);
+        delete_user_meta($user_id, knovix_token_expiry_key($old));
+    }
+
     return $token;
 }
 
@@ -72,7 +106,9 @@ function knovix_authenticate_bearer_token($user_id) {
     ));
     if (!$found) return $user_id;
 
-    $expires = (int) get_user_meta($found, '_knovix_api_token_expires', true);
+    $hash    = knovix_hash_token($token);
+    $expires = (int) get_user_meta($found, knovix_token_expiry_key($hash), true);
+    if (!$expires) $expires = (int) get_user_meta($found, '_knovix_api_token_expires', true); // token from an older version
     if ($expires < time()) return $user_id; // expired
 
     return (int) $found;
@@ -96,10 +132,20 @@ function knovix_register_auth_routes() {
         'callback' => function (WP_REST_Request $req) {
             $email = sanitize_email($req->get_param('email'));
             $password = (string) $req->get_param('password');
+            // Basic brute-force guard: 8 wrong passwords per email+IP per 15 minutes.
+            $ip       = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+            $try_key  = 'knovix_login_' . md5(strtolower($email) . '|' . $ip);
+            $failures = (int) get_transient($try_key);
+            if ($failures >= 8) {
+                return knovix_error('Too many failed attempts. Please try again in a few minutes.', 429);
+            }
+
             $user = get_user_by('email', $email);
             if (!$user || !wp_check_password($password, $user->user_pass, $user->ID)) {
+                set_transient($try_key, $failures + 1, 15 * MINUTE_IN_SECONDS);
                 return knovix_error('Invalid email or password', 401);
             }
+            delete_transient($try_key);
             $token = knovix_issue_token($user->ID);
             return array_merge(knovix_current_user_response($user), ['token' => $token]);
         }
@@ -122,6 +168,9 @@ function knovix_register_auth_routes() {
 
             wp_update_user(['ID' => $user_id, 'display_name' => $name, 'first_name' => $name]);
             $user = get_user_by('id', $user_id);
+            // wp_create_user() uses WordPress's default role (often "subscriber");
+            // shoppers must be WooCommerce "customer"s.
+            if ($user && get_role('customer')) $user->set_role('customer');
             $token = knovix_issue_token($user_id);
             return array_merge(knovix_current_user_response($user), ['token' => $token]);
         }
@@ -131,8 +180,13 @@ function knovix_register_auth_routes() {
         'methods'  => 'POST',
         'permission_callback' => 'is_user_logged_in',
         'callback' => function () {
-            delete_user_meta(get_current_user_id(), '_knovix_api_token');
-            delete_user_meta(get_current_user_id(), '_knovix_api_token_expires');
+            $uid   = get_current_user_id();
+            $token = knovix_get_bearer_token();
+            if ($token !== '') {
+                $hash = knovix_hash_token($token);
+                delete_user_meta($uid, '_knovix_api_token', $hash);
+                delete_user_meta($uid, knovix_token_expiry_key($hash));
+            }
             return ['success' => true];
         }
     ]);

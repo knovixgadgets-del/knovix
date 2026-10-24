@@ -34,6 +34,8 @@ function knovix_register_product_routes()
             $terms = get_terms([
                 'taxonomy'   => 'product_cat',
                 'hide_empty' => false,
+                'orderby'    => 'name',
+                'order'      => 'ASC',
             ]);
 
 
@@ -84,6 +86,8 @@ function knovix_register_product_routes()
                     'id'    => $term->slug,
                     'name'  => $term->name,
                     'image' => $image,
+                    'count' => (int) $term->count,
+                    'parent' => $term->parent ? (int) $term->parent : 0,
                 ];
             }
 
@@ -119,15 +123,13 @@ function knovix_register_product_routes()
                 'status' => 'publish',
 
                 /*
-                 * The storefront has no pagination, so return the whole
+                 * The storefront has no pagination, so fetch the whole
                  * catalogue (capped for safety). It used to be a hard 24,
-                 * which silently hid every product after the 24th.
-                 * ?limit=N lets a client ask for fewer.
+                 * which silently hid every product after the 24th. The
+                 * client's ?limit=N is applied AFTER search/sort below, so
+                 * "cheapest 8" really is the 8 cheapest.
                  */
-                'limit' => min(
-                    500,
-                    max(1, (int) ($request->get_param('limit') ?: 500))
-                ),
+                'limit' => 500,
 
                 'return' => 'objects',
 
@@ -152,70 +154,18 @@ function knovix_register_product_routes()
 
             /*
             |--------------------------------------------------------------------------
-            | Search
-            |--------------------------------------------------------------------------
-            */
-
-            $search = $request->get_param('search');
-
-            if ($search !== null && $search !== '') {
-
-                $args['s'] = sanitize_text_field($search);
-            }
-
-
-            /*
-            |--------------------------------------------------------------------------
             | Sorting
             |--------------------------------------------------------------------------
+            |
+            | price / rating are sorted in PHP below: wc_get_products() does not
+            | reliably honour orderby=price|rating, so the old "Price: low to high"
+            | option returned the unsorted list.
             */
 
-            $sort = $request->get_param('sort');
+            $sort = (string) $request->get_param('sort');
 
-            switch ($sort) {
-
-                case 'price_asc':
-
-                    $args['orderby'] = 'price';
-                    $args['order']   = 'ASC';
-
-                    break;
-
-
-                case 'price_desc':
-
-                    $args['orderby'] = 'price';
-                    $args['order']   = 'DESC';
-
-                    break;
-
-
-                case 'rating':
-
-                    $args['orderby'] = 'rating';
-                    $args['order']   = 'DESC';
-
-                    break;
-
-
-                case 'newest':
-
-                    $args['orderby'] = 'date';
-                    $args['order']   = 'DESC';
-
-                    break;
-
-
-                default:
-
-                    /*
-                     * WooCommerce default.
-                     */
-                    $args['orderby'] = 'date';
-                    $args['order']   = 'DESC';
-
-                    break;
-            }
+            $args['orderby'] = 'date';
+            $args['order']   = 'DESC';
 
 
             /*
@@ -225,6 +175,74 @@ function knovix_register_product_routes()
             */
 
             $products = wc_get_products($args);
+
+            if (!is_array($products)) {
+                $products = [];
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Search (name, SKU, descriptions, category)
+            |--------------------------------------------------------------------------
+            */
+
+            $search = trim((string) $request->get_param('search'));
+
+            if ($search !== '') {
+
+                $needle = function_exists('mb_strtolower') ? mb_strtolower($search) : strtolower($search);
+
+                $products = array_values(array_filter($products, function ($p) use ($needle) {
+
+                    $hay = $p->get_name() . ' ' . $p->get_sku() . ' ' . $p->get_short_description() . ' ' . $p->get_description();
+
+                    $terms = get_the_terms($p->get_id(), 'product_cat');
+                    if ($terms && !is_wp_error($terms)) {
+                        foreach ($terms as $t) $hay .= ' ' . $t->name;
+                    }
+
+                    $hay = function_exists('mb_strtolower') ? mb_strtolower($hay) : strtolower($hay);
+
+                    return strpos($hay, $needle) !== false;
+                }));
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Hide products the owner set to "Hidden" catalogue visibility
+            |--------------------------------------------------------------------------
+            */
+
+            $products = array_values(array_filter($products, function ($p) {
+                return $p->get_catalog_visibility() !== 'hidden';
+            }));
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Sort
+            |--------------------------------------------------------------------------
+            */
+
+            if ($sort === 'price_asc') {
+                usort($products, function ($a, $b) { return (float) $a->get_price() <=> (float) $b->get_price(); });
+            } elseif ($sort === 'price_desc') {
+                usort($products, function ($a, $b) { return (float) $b->get_price() <=> (float) $a->get_price(); });
+            } elseif ($sort === 'rating') {
+                usort($products, function ($a, $b) {
+                    $c = (float) $b->get_average_rating() <=> (float) $a->get_average_rating();
+                    return $c !== 0 ? $c : ((int) $b->get_review_count() <=> (int) $a->get_review_count());
+                });
+            }
+
+
+            $limit = (int) $request->get_param('limit');
+
+            if ($limit > 0) {
+                $products = array_slice($products, 0, min(500, $limit));
+            }
 
 
             /*
@@ -275,7 +293,11 @@ function knovix_register_product_routes()
                 $product = wc_get_product($product_id);
 
 
-                if (!$product) {
+                // Drafts / private / trashed products must not be readable by the public.
+                if (
+                    !$product ||
+                    ($product->get_status() !== 'publish' && !current_user_can('manage_woocommerce'))
+                ) {
 
                     return knovix_error(
                         'Product not found',
@@ -355,9 +377,10 @@ function knovix_register_product_routes()
         '/products/(?P<id>\d+)',
         [
 
-            'methods' => [
-                WP_REST_Server::EDITABLE,
-            ],
+            // Must be a plain string. As an array holding one \"POST, PUT, PATCH\" string
+            // WordPress treated it as ONE method name that no request can match, so
+            // editing a product from the admin panel returned rest_no_route.
+            'methods' => WP_REST_Server::EDITABLE,
 
             'permission_callback' => 'knovix_require_admin',
 
