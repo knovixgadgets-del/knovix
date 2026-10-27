@@ -44,7 +44,10 @@ export async function getCategories() {
   return toArray(await apiFetch('/categories'))
 }
 
-export async function getProducts(filters = {}) {
+// `options.includeHidden` skips the storefront's "dummy product" filter. The admin
+// panel uses it so staff can still see (and delete) test/placeholder products
+// that are hidden from customers.
+export async function getProducts(filters = {}, options = {}) {
   const cleanFilters = Object.fromEntries(
     Object.entries(filters).filter(
       ([, value]) =>
@@ -59,7 +62,7 @@ export async function getProducts(filters = {}) {
   const items = toArray(await apiFetch(
     qs ? `/products?${qs}` : '/products'
   ))
-  return items.filter((p) => !isDummyProduct(p))
+  return options.includeHidden ? items.filter((p) => p && typeof p === 'object') : items.filter((p) => !isDummyProduct(p))
 }
 
 export async function getProduct(id) {

@@ -70,7 +70,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
     e.preventDefault()
 
     const params = new URLSearchParams()
-    if (query) params.set('search', query)
+    if (query.trim()) params.set('search', query.trim())
     if (category) params.set('category', category.id)
 
     navigate(`/shop${params.toString() ? `?${params.toString()}` : ''}`)
@@ -162,6 +162,9 @@ export default function Header({ menuOpen, setMenuOpen }) {
             </div>
 
             <input
+              type="search"
+              aria-label="Search products"
+              enterKeyHint="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Mobile charger"
@@ -275,7 +278,7 @@ export default function Header({ menuOpen, setMenuOpen }) {
               </span>
             </button>
 
-            <div className="absolute right-0 top-full pt-1 w-48 hidden group-hover:block z-50">
+            <div className="absolute right-0 top-full pt-1 w-48 hidden group-hover:block group-focus-within:block z-50">
               <div className="bg-white card p-2">
                 {user ? (
                   <>

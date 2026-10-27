@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getOrder } from '../api/orders'
 import { CheckCircleIcon, TruckIcon } from '../components/Icons'
+import usePageMeta from '../utils/usePageMeta'
 
 const inr = (n) => Number(n || 0).toLocaleString('en-IN')
 
@@ -30,6 +31,7 @@ const JUST_PLACED_KEY = 'knovix_just_placed'
 
 export default function OrderSuccess() {
   const { id } = useParams()
+  usePageMeta('Order details', undefined, { noindex: true })
   const navigate = useNavigate()
   const { user } = useAuth()
   const [order, setOrder] = useState(null)
@@ -80,12 +82,15 @@ export default function OrderSuccess() {
             <CheckCircleIcon className="w-8 h-8" />
           </span>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-ink-900">Thank you! Your order is confirmed.</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-ink-900">
+              {justPlaced ? 'Thank you! Your order is confirmed.' : 'Order details'}
+            </h1>
             <p className="text-sm text-slate-500 mt-1">
               Order <span className="font-mono font-medium text-ink-900">#{id}</span>
-              {order?.createdAt && (
+              {order?.createdAt && !Number.isNaN(new Date(order.createdAt).getTime()) && (
                 <> · Placed on {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</>
               )}
+              {order?.status && <> · <span className="capitalize font-medium">{order.status}</span></>}
             </p>
           </div>
         </div>
@@ -126,20 +131,22 @@ export default function OrderSuccess() {
           </div>
         ) : !order ? (
           <div className="card p-5 mt-4 text-sm text-slate-500">
-            We couldn't load the details for this order right now, but your confirmation email/SMS is on its way.
+            We couldn't load the details for this order right now. Please check My Orders in a moment, or contact us if you need help.
           </div>
         ) : (
           <>
-            {/* Delivery estimate strip */}
+            {/* Delivery estimate strip — not shown for cancelled / delivered orders */}
+            {!['cancelled', 'delivered', 'refunded'].includes(String(order.status || '').toLowerCase()) && (
             <div className="card p-4 sm:p-5 mt-4 flex items-center gap-3">
               <span className="w-10 h-10 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
                 <TruckIcon className="w-5 h-5" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-ink-900">Arriving {estimatedDelivery(order.createdAt)}</p>
-                <p className="text-xs text-slate-500">We'll email/SMS you tracking details as soon as it ships.</p>
+                <p className="text-sm font-semibold text-ink-900">Estimated delivery: {estimatedDelivery(order.createdAt)}</p>
+                <p className="text-xs text-slate-500">Dates are an estimate and may vary by location.</p>
               </div>
             </div>
+            )}
 
             <div className="grid sm:grid-cols-[1fr_280px] gap-4 mt-4">
               {/* Items */}
@@ -159,7 +166,7 @@ export default function OrderSuccess() {
                         <p className="text-sm font-medium text-ink-900 line-clamp-1">{item.name}</p>
                         <p className="text-xs text-slate-500 mt-0.5">Qty: {item.qty}</p>
                       </div>
-                      <p className="text-sm font-semibold shrink-0">₹{inr(item.price * item.qty)}</p>
+                      <p className="text-sm font-semibold shrink-0">₹{inr((Number(item.price) || 0) * (Number(item.qty) || 0))}</p>
                     </div>
                   ))}
                 </div>
@@ -180,11 +187,11 @@ export default function OrderSuccess() {
                 <h2 className="font-semibold text-sm mb-3">Order summary</h2>
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between"><span className="text-slate-500">Subtotal</span><span>₹{inr(order.subtotal)}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Shipping</span><span>{order.shipping === 0 ? 'Free' : `₹${inr(order.shipping)}`}</span></div>
-                  <div className="flex justify-between font-semibold text-base border-t border-slate-100 pt-2 mt-1"><span>{order.payment === 'cod' ? 'Total to pay' : 'Total paid'}</span><span>₹{inr(order.total)}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Shipping</span><span>{Number(order.shipping) === 0 ? 'Free' : `₹${inr(order.shipping)}`}</span></div>
+                  <div className="flex justify-between font-semibold text-base border-t border-slate-100 pt-2 mt-1"><span>{order.payment === 'cod' ? 'Total to pay' : 'Order total'}</span><span>₹{inr(order.total)}</span></div>
                 </div>
                 <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-100">
-                  {order.payment === 'cod' ? 'Pay on delivery via ' : 'Paid via '}{paymentLabel[order.payment] || order.payment}
+                  Payment method: {paymentLabel[order.payment] || order.payment}
                 </p>
               </div>
             </div>

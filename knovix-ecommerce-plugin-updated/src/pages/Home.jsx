@@ -10,6 +10,7 @@ import { homeShow, categoryTabs, trustBadges, lookingRail, promoTiles } from '..
 import { useAuth } from '../context/AuthContext'
 import { CategoryIcon, TruckIcon, PhoneIcon, BoxIcon, CheckCircleIcon } from '../components/Icons'
 import '../styles/home.css'
+import usePageMeta from '../utils/usePageMeta'
 import { getCategories, getProducts } from '../api/products'
 
 // Amazon-style single-day deal cycle: the countdown always shows how much
@@ -161,6 +162,7 @@ function PromoTiles() {
 }
 
 export default function Home() {
+  usePageMeta()
   const { freeMin } = useShippingRules()
   const [categories, setCategories] = useState([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)

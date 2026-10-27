@@ -42,14 +42,19 @@ async function fetchOnce(url, options, timeoutMs) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    // Only send a JSON Content-Type when there is a body. On GET requests it
+    // forced a CORS preflight (an extra OPTIONS round-trip) before every single
+    // product/category request.
+    const headers = {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...authHeader(),
+      ...(options.headers || {}),
+    };
+
     const res = await fetch(url, {
       ...options,
       signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeader(),
-        ...(options.headers || {}),
-      },
+      headers,
     });
 
     const text = await res.text();

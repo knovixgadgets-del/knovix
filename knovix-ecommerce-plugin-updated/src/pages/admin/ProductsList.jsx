@@ -10,7 +10,7 @@ export default function ProductsList() {
   function load() {
     setLoading(true)
     setError('')
-    getProducts()
+    getProducts({}, { includeHidden: true })
       .then((items) => setProducts(items))
       .catch((err) => { setProducts([]); setError(err.message || "Couldn't load products.") })
       .finally(() => setLoading(false))
@@ -54,6 +54,8 @@ export default function ProductsList() {
           <tbody>
             {loading ? (
               <tr><td className="p-4 text-slate-400" colSpan={5}>Loading…</td></tr>
+            ) : products.length === 0 ? (
+              <tr><td className="p-4 text-slate-400" colSpan={5}>{error ? 'Products could not be loaded.' : 'No products yet.'}</td></tr>
             ) : products.map((p) => (
               <tr key={p.id} className="border-t border-slate-100">
                 <td className="p-3 flex items-center gap-3">
@@ -63,11 +65,11 @@ export default function ProductsList() {
                 <td className="p-3 capitalize text-slate-600">{String(p.category || '').replace(/-/g, ' ')}</td>
                 <td className="p-3">₹{p.price}</td>
                 <td className="p-3">
-                  <span className={p.stock <= 10 ? 'text-red-500 font-medium' : ''}>{p.stock}</span>
+                  <span className={p.stock !== null && p.stock !== '' && Number(p.stock) <= 10 ? 'text-red-500 font-medium' : ''}>{p.stock ?? '—'}</span>
                 </td>
                 <td className="p-3 text-right space-x-3">
                   <Link to={`/admin/products/${p.id}`} className="text-brand-700">Edit</Link>
-                  <button onClick={() => handleDelete(p.id)} className="text-red-500">Delete</button>
+                  <button type="button" onClick={() => handleDelete(p.id)} className="text-red-500">Delete</button>
                 </td>
               </tr>
             ))}

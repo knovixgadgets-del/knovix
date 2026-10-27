@@ -4,6 +4,7 @@ import ProductCard from '../components/ProductCard'
 import { CategoryIcon } from '../components/Icons'
 import { getCategories, getProducts } from '../api/products'
 import { rankProductsByPhoto } from '../utils/visualSearch'
+import usePageMeta from '../utils/usePageMeta'
 
 // Skeleton grid shown while products are loading — mirrors the real
 // product-card grid (image + title + price blocks) so the page doesn't
@@ -62,10 +63,18 @@ export default function Shop() {
   const [retryKey, setRetryKey] = useState(0)
 
   // URL parameters
-  const category = params.get('category') || ''
+  const categoryParam = params.get('category') || ''
   const search = params.get('search') || ''
   const sort = params.get('sort') || ''
   const visualSearch = params.get('visualSearch') === '1'
+
+  // /category/<slug> links (SEO URLs) pass a slug, the rest of the site passes an
+  // id. Resolve either to the real category so the page title, the highlighted
+  // sidebar entry and the API filter all agree.
+  const matchedCategory = categories.find(
+    (c) => String(c.id) === String(categoryParam) || (c.slug && String(c.slug) === String(categoryParam))
+  )
+  const category = matchedCategory ? String(matchedCategory.id) : categoryParam
 
   // The captured/uploaded photo travels via router state from the header's
   // camera button (see Header.jsx). A direct visit to ?visualSearch=1 with
@@ -93,13 +102,11 @@ export default function Shop() {
 
   // Load categories
   useEffect(() => {
+    let cancelled = false
     getCategories()
-      .then((items) => {
-        setCategories(items)
-      })
-      .catch(() => {
-        setCategories([])
-      })
+      .then((items) => { if (!cancelled) setCategories(items) })
+      .catch(() => { if (!cancelled) setCategories([]) })
+    return () => { cancelled = true }
   }, [])
 
   // Load products
@@ -153,9 +160,18 @@ export default function Shop() {
   }
 
   // Get current category name
-  const currentCategoryName = categories.find(
-    (c) => String(c.id) === String(category)
-  )?.name
+  const currentCategoryName = matchedCategory?.name
+
+  const pageTitle = category
+    ? currentCategoryName || 'Products'
+    : search
+      ? `Results for "${search}"`
+      : 'All Products'
+  usePageMeta(pageTitle === 'All Products' ? 'Shop All Gadgets & Accessories' : pageTitle)
+
+  function clearFilters() {
+    setParams(new URLSearchParams())
+  }
 
   return (
     <div className="bg-brand-50 min-h-[60vh]">
@@ -177,6 +193,7 @@ export default function Shop() {
             {/* All Products */}
             <li>
               <button
+                type="button"
                 onClick={() => setParam('category', '')}
                 className={
                   !category
@@ -192,6 +209,7 @@ export default function Shop() {
             {categories.map((c) => (
               <li key={c.id}>
                 <button
+                  type="button"
                   onClick={() => setParam('category', String(c.id))}
                   className={
                     String(category) === String(c.id)
@@ -217,15 +235,13 @@ export default function Shop() {
 
           <h1 className="text-xl font-bold">
 
-            {category
-              ? currentCategoryName || 'Products'
-              : search
-                ? `Results for "${search}"`
-                : 'All Products'}
+            {pageTitle}
 
-            <span className="text-slate-400 font-normal text-sm ml-2">
-              ({filtered.length})
-            </span>
+            {!loading && !error && (
+              <span className="text-slate-400 font-normal text-sm ml-2">
+                ({filtered.length})
+              </span>
+            )}
 
           </h1>
 
@@ -241,6 +257,7 @@ export default function Shop() {
             <select
               value={sort}
               onChange={(e) => setParam('sort', e.target.value)}
+              aria-label="Sort products"
               className="input w-auto"
             >
               <option value="">
@@ -267,6 +284,32 @@ export default function Shop() {
           </div>
 
         </div>
+
+        {/* Mobile category chips — phones had no way to filter by category
+            on this page (the sidebar is desktop only). */}
+        {categories.length > 0 && (
+          <div className="md:hidden -mx-4 px-4 mb-4 flex gap-2 overflow-x-auto no-scrollbar" role="group" aria-label="Filter by category">
+            <button
+              type="button"
+              onClick={() => setParam('category', '')}
+              aria-pressed={!category}
+              className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium ${!category ? 'bg-brand-600 border-brand-600 text-white' : 'bg-white border-slate-300 text-slate-700'}`}
+            >
+              All
+            </button>
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setParam('category', String(c.id))}
+                aria-pressed={String(category) === String(c.id)}
+                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium whitespace-nowrap ${String(category) === String(c.id) ? 'bg-brand-600 border-brand-600 text-white' : 'bg-white border-slate-300 text-slate-700'}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Visual search notice — there's no product-recognition API behind
             this catalog, so rather than faking an exact match, the camera
@@ -316,6 +359,7 @@ export default function Shop() {
             </p>
 
             <button
+              type="button"
               onClick={() => setRetryKey((k) => k + 1)}
               className="btn-outline mt-3"
             >
@@ -332,6 +376,12 @@ export default function Shop() {
             <p className="text-slate-500 text-sm">
               No products found{search ? ` for "${search}"` : ''}.
             </p>
+
+            {(search || category || sort) && (
+              <button type="button" onClick={clearFilters} className="btn-outline mt-3">
+                Clear search &amp; filters
+              </button>
+            )}
 
             {categories.length > 0 && (
               <div className="mt-6 text-left">

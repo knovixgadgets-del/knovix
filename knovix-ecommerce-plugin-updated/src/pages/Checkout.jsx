@@ -1,12 +1,15 @@
+import { useEffect, useRef, useState } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useIndianStates, useShippingQuote, useShippingRules } from '../utils/shipping'
-import { useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { createOrder } from '../api/orders'
 import { CheckCircleIcon } from '../components/Icons'
+import { inr } from '../utils/format'
+import usePageMeta from '../utils/usePageMeta'
 
 const POPUP_SECONDS = 6
+const PHONE_RE = /^[6-9]\d{9}$/ // Indian mobile numbers start with 6-9
 
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
@@ -16,9 +19,17 @@ export default function Checkout() {
   const [placed, setPlaced] = useState(null) // order returned by the server -> shows the thank-you popup
   const [error, setError] = useState('')
   const [payment, setPayment] = useState('cod')
+  const errorRef = useRef(null)
   const [form, setForm] = useState({
-    name: user?.name || '', phone: '', address: '', city: '', state: '', pincode: ''
+    name: user?.name || '',
+    phone: String(user?.phone || '').replace(/\D/g, '').slice(-10),
+    address: '',
+    city: '',
+    state: '',
+    pincode: ''
   })
+
+  usePageMeta('Checkout', undefined, { noindex: true })
 
   const states = useIndianStates()
   const quote = useShippingQuote(items, form.state, form.pincode)
@@ -31,6 +42,11 @@ export default function Checkout() {
     return () => clearTimeout(t)
   }, [placed, navigate])
 
+  // Bring a failed-order message into view (it sits at the top of a long form).
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [error])
+
   if (items.length === 0 && !placed) return <Navigate to="/cart" replace />
 
   // Shipping is only ever charged once the server has priced it for a real
@@ -41,12 +57,13 @@ export default function Checkout() {
   const shownSubtotal = quote.status === 'ok' && quote.subtotal != null ? quote.subtotal : subtotal
   const total = shownSubtotal + shipping
   const toFree = quote.status === 'ok' && shipping > 0 && freeMin ? Math.max(0, Math.ceil(freeMin - shownSubtotal)) : 0
-  const phoneOk = form.phone.length === 10
-  const canPlace = quote.status === 'ok' && phoneOk && !placing
+  const phoneOk = PHONE_RE.test(form.phone)
+  const pincodeOk = /^\d{6}$/.test(form.pincode)
+  const canPlace = quote.status === 'ok' && phoneOk && pincodeOk && !placing
 
   let shippingLabel = 'Enter state & pincode'
   if (quote.status === 'loading') shippingLabel = 'Calculating…'
-  else if (quote.status === 'ok') shippingLabel = shipping === 0 ? 'Free' : `₹${shipping}`
+  else if (quote.status === 'ok') shippingLabel = shipping === 0 ? 'Free' : `₹${inr(shipping)}`
   else if (quote.status === 'unavailable') shippingLabel = 'Not deliverable'
   else if (quote.status === 'mismatch') shippingLabel = 'Check pincode'
   else if (quote.status === 'error') shippingLabel = 'Unavailable'
@@ -57,12 +74,13 @@ export default function Checkout() {
 
   async function handlePlaceOrder(e) {
     e.preventDefault()
+    if (!canPlace) return
     setError('')
     setPlacing(true)
     try {
       const order = await createOrder({
         userId: user?.id || null,
-        customer: form,
+        customer: { ...form, name: form.name.trim(), address: form.address.trim(), city: form.city.trim() },
         items,
         payment
       })
@@ -74,11 +92,15 @@ export default function Checkout() {
       setPlaced({ id: order.id, total: order.total ?? total })
       clearCart()
     } catch (err) {
-      setError(err.message)
+      setError(err.message || "We couldn't place your order. Please try again.")
     } finally {
       setPlacing(false)
     }
   }
+
+  let buttonLabel = 'Enter state & pincode to continue'
+  if (placing) buttonLabel = 'Placing order…'
+  else if (quote.status === 'ok') buttonLabel = phoneOk ? `Place Order · ₹${inr(total)}` : 'Enter a valid mobile number to continue'
 
   return (
     <div className="container-px max-w-5xl mx-auto py-8 grid md:grid-cols-[1fr_320px] gap-8">
@@ -91,7 +113,7 @@ export default function Checkout() {
             <h2 className="mt-4 text-xl font-bold text-ink-900">Thank you for your order!</h2>
             <p className="mt-1 text-sm text-slate-500">
               Order <span className="font-mono font-medium text-ink-900">#{placed.id}</span> is confirmed
-              {Number(placed.total) > 0 && <> · ₹{Number(placed.total).toLocaleString('en-IN')}</>}
+              {Number(placed.total) > 0 && <> · ₹{inr(placed.total)}</>}
             </p>
             <p className="mt-2 text-sm text-slate-600">We'll keep you posted at every step.</p>
             <div className="h-1.5 rounded-full bg-brand-100 overflow-hidden mt-4">
@@ -105,79 +127,102 @@ export default function Checkout() {
           </div>
         </div>
       )}
+
       <form onSubmit={handlePlaceOrder} className="space-y-5">
         <h1 className="text-xl font-bold">Shipping Details</h1>
-        {error && <p className="text-red-600 text-sm bg-red-50 rounded-md px-3 py-2">{error}</p>}
+        {error && <p ref={errorRef} role="alert" className="text-red-600 text-sm bg-red-50 rounded-md px-3 py-2">{error}</p>}
+
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="label">Full Name</label>
-            <input required className="input" value={form.name} onChange={(e) => update('name', e.target.value)} />
+            <label htmlFor="co-name" className="label">Full Name</label>
+            <input id="co-name" required autoComplete="name" className="input" value={form.name} onChange={(e) => update('name', e.target.value)} />
           </div>
           <div>
-            <label className="label">Phone Number</label>
-            <input required inputMode="tel" maxLength={10} placeholder="10-digit mobile number" className="input" value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/\D/g, ''))} />
-          </div>
-        </div>
-        <div>
-          <label className="label">Address</label>
-          <input required className="input" value={form.address} onChange={(e) => update('address', e.target.value)} />
-        </div>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div>
-            <label className="label">City</label>
-            <input required className="input" value={form.city} onChange={(e) => update('city', e.target.value)} />
-          </div>
-          <div>
-            <label className="label">State</label>
-            {states.length > 0 ? (
-              <select required className="input" value={form.state} onChange={(e) => update('state', e.target.value)}>
-                <option value="">Select state</option>
-                {states.map((st) => <option key={st.code} value={st.code}>{st.name}</option>)}
-              </select>
-            ) : (
-              <input required className="input" value={form.state} onChange={(e) => update('state', e.target.value)} />
-            )}
-          </div>
-          <div>
-            <label className="label">Pincode</label>
-            <input required inputMode="numeric" maxLength={6} className="input" value={form.pincode} onChange={(e) => update('pincode', e.target.value.replace(/\D/g, ''))} />
+            <label htmlFor="co-phone" className="label">Mobile Number</label>
+            <input
+              id="co-phone"
+              required
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              maxLength={10}
+              placeholder="10-digit mobile number"
+              className="input"
+              value={form.phone}
+              onChange={(e) => update('phone', e.target.value.replace(/\D/g, ''))}
+            />
           </div>
         </div>
 
         <div>
-          <label className="label">Payment Method</label>
+          <label htmlFor="co-address" className="label">Address</label>
+          <input id="co-address" required autoComplete="street-address" placeholder="House no., street, area" className="input" value={form.address} onChange={(e) => update('address', e.target.value)} />
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div>
+            <label htmlFor="co-city" className="label">City</label>
+            <input id="co-city" required autoComplete="address-level2" className="input" value={form.city} onChange={(e) => update('city', e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="co-state" className="label">State</label>
+            {states.length > 0 ? (
+              <select id="co-state" required autoComplete="address-level1" className="input" value={form.state} onChange={(e) => update('state', e.target.value)}>
+                <option value="">Select state</option>
+                {states.map((st) => <option key={st.code} value={st.code}>{st.name}</option>)}
+              </select>
+            ) : (
+              <input id="co-state" required autoComplete="address-level1" className="input" value={form.state} onChange={(e) => update('state', e.target.value)} />
+            )}
+          </div>
+          <div>
+            <label htmlFor="co-pin" className="label">Pincode</label>
+            <input id="co-pin" required inputMode="numeric" autoComplete="postal-code" maxLength={6} className="input" value={form.pincode} onChange={(e) => update('pincode', e.target.value.replace(/\D/g, ''))} />
+          </div>
+        </div>
+
+        <fieldset>
+          <legend className="label">Payment Method</legend>
           <div className="space-y-2">
             {[['cod', 'Cash on Delivery'], ['upi', 'UPI'], ['card', 'Credit / Debit Card']].map(([val, label]) => (
-              <label key={val} className="flex items-center gap-2 text-sm border rounded-md px-3 py-2 cursor-pointer">
+              <label key={val} className={`flex items-center gap-2 text-sm border rounded-md px-3 py-2.5 cursor-pointer ${payment === val ? 'border-brand-600 bg-brand-50' : 'border-slate-200'}`}>
                 <input type="radio" name="payment" value={val} checked={payment === val} onChange={() => setPayment(val)} />
                 {label}
               </label>
             ))}
           </div>
-        </div>
+        </fieldset>
 
-        {form.phone.length > 0 && !phoneOk && <p className="text-red-600 text-sm">Enter a valid 10-digit mobile number.</p>}
-        {quote.status === 'unavailable' && <p className="text-red-600 text-sm">Sorry, we don't deliver to this location yet.</p>}
-        {quote.status === 'mismatch' && <p className="text-red-600 text-sm">This pincode doesn't match the selected state. Please check and try again.</p>}
-        {quote.status === 'error' && <p className="text-red-600 text-sm">Couldn't calculate shipping. Please check your connection and retry.</p>}
-        <button disabled={!canPlace} className="btn-primary w-full disabled:opacity-60">{placing ? 'Placing order…' : quote.status === 'ok' ? (phoneOk ? `Place Order · ₹${total}` : 'Enter 10-digit phone to continue') : 'Enter state & pincode to continue'}</button>
+        {form.phone.length > 0 && !phoneOk && <p className="text-red-600 text-sm">Enter a valid 10-digit Indian mobile number (starting with 6, 7, 8 or 9).</p>}
+        {form.pincode.length > 0 && form.pincode.length < 6 && <p className="text-slate-500 text-sm">Pincodes have 6 digits.</p>}
+        {quote.status === 'unavailable' && <p role="alert" className="text-red-600 text-sm">Sorry, we don't deliver to this location yet.</p>}
+        {quote.status === 'mismatch' && <p role="alert" className="text-red-600 text-sm">This pincode doesn't match the selected state. Please check and try again.</p>}
+        {quote.status === 'error' && <p role="alert" className="text-red-600 text-sm">Couldn't calculate shipping. Please check your connection and retry.</p>}
+
+        <button disabled={!canPlace} className="btn-primary w-full h-12 disabled:opacity-60">{buttonLabel}</button>
+        <p className="text-xs text-slate-500 text-center">
+          By placing your order you agree to Knovix's <Link to="/terms" className="underline">Terms</Link> and <Link to="/returns" className="underline">Returns Policy</Link>.
+        </p>
       </form>
 
-      <div className="card p-5 h-fit">
-        <h2 className="font-semibold mb-3">Order Summary</h2>
-        <div className="space-y-2 text-sm max-h-64 overflow-auto">
-          {items.map((i) => (
-            <div key={i.id} className="flex justify-between">
-              <span className="line-clamp-1">{i.name} × {i.qty}</span>
-              <span>₹{i.price * i.qty}</span>
-            </div>
-          ))}
+      <div className="card p-5 h-fit md:sticky md:top-28">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold">Order Summary</h2>
+          <Link to="/cart" className="text-xs text-brand-700 hover:underline">Edit cart</Link>
         </div>
+        <ul className="space-y-2 text-sm max-h-64 overflow-auto">
+          {items.map((i) => (
+            <li key={i.id} className="flex justify-between gap-3">
+              <span className="line-clamp-1">{i.name} × {i.qty}</span>
+              <span className="shrink-0">₹{inr(i.price * i.qty)}</span>
+            </li>
+          ))}
+        </ul>
         <div className="text-sm space-y-2 border-t mt-3 pt-3">
-          <div className="flex justify-between"><span>Subtotal</span><span>₹{shownSubtotal}</span></div>
+          <div className="flex justify-between"><span>Subtotal</span><span>₹{inr(shownSubtotal)}</span></div>
           <div className="flex justify-between"><span>Shipping</span><span className={quote.status === 'ok' && shipping === 0 ? 'text-emerald-600 font-medium' : ''}>{shippingLabel}</span></div>
-          {toFree > 0 && <p className="text-xs text-brand-700 bg-brand-50 rounded-md px-2.5 py-1.5">Add ₹{toFree} more to get free delivery</p>}
-          <div className="flex justify-between font-semibold text-base border-t pt-2"><span>Total</span><span>{quote.status === 'ok' ? `₹${total}` : `₹${shownSubtotal}`}</span></div>
+          {toFree > 0 && <p className="text-xs text-brand-700 bg-brand-50 rounded-md px-2.5 py-1.5">Add ₹{inr(toFree)} more to get free delivery</p>}
+          <div className="flex justify-between font-semibold text-base border-t pt-2"><span>Total</span><span>₹{inr(quote.status === 'ok' ? total : shownSubtotal)}</span></div>
         </div>
       </div>
     </div>

@@ -25,16 +25,21 @@ export default function MobileMenuSheet({ menuOpen, setMenuOpen }) {
     function onScroll() {
       close()
     }
+    function onKey(e) {
+      if (e.key === 'Escape') close()
+    }
     function onClickOutside(e) {
       if (panelRef.current && !panelRef.current.contains(e.target)) close()
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
+    document.addEventListener('keydown', onKey)
     document.addEventListener('touchstart', onClickOutside)
     document.addEventListener('mousedown', onClickOutside)
 
     return () => {
       window.removeEventListener('scroll', onScroll)
+      document.removeEventListener('keydown', onKey)
       document.removeEventListener('touchstart', onClickOutside)
       document.removeEventListener('mousedown', onClickOutside)
     }
@@ -116,11 +121,7 @@ export default function MobileMenuSheet({ menuOpen, setMenuOpen }) {
             ) : (
               <>
                 <Link to="/login" onClick={close} className={rowClass()}>
-                  <span>Login</span>
-                  <ChevronRightIcon className="w-4 h-4 text-slate-300" />
-                </Link>
-                <Link to="/signup" onClick={close} className={rowClass()}>
-                  <span>Sign Up</span>
+                  <span>Login / Sign Up</span>
                   <ChevronRightIcon className="w-4 h-4 text-slate-300" />
                 </Link>
               </>

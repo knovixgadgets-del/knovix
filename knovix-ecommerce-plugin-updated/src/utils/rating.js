@@ -1,16 +1,11 @@
-// Some products coming from the store don't have a rating yet. Rather than
-// showing an unrated/blank card, give them a stable fallback rating picked
-// from a small set of realistic values — stable per product (based on its
-// id) so it doesn't change on every re-render.
-const FALLBACK_RATINGS = [4.3, 4.5, 5]
-
+// Only ever show a rating that real customers gave. This used to invent a
+// 4.3 / 4.5 / 5.0 rating for any product without reviews, which shows shoppers
+// fake social proof (and is not allowed for Indian e-commerce sellers).
 export function getDisplayRating(product) {
-  if (!product) return 0
-  if (product.rating && product.rating > 0) return product.rating
+  const rating = Number(product?.rating)
+  return Number.isFinite(rating) && rating > 0 ? Math.min(5, rating) : 0
+}
 
-  const seed = String(product.id ?? '')
-    .split('')
-    .reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
-
-  return FALLBACK_RATINGS[seed % FALLBACK_RATINGS.length]
+export function hasRating(product) {
+  return getDisplayRating(product) > 0
 }

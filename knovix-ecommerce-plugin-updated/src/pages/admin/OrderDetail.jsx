@@ -10,7 +10,12 @@ export default function OrderDetail() {
 
   const [error, setError] = useState(false)
 
-  useEffect(() => { getOrder(id).then(setOrder).catch(() => setError(true)) }, [id])
+  useEffect(() => {
+    let alive = true
+    setError(false)
+    getOrder(id).then((o) => { if (alive) setOrder(o) }).catch(() => { if (alive) setError(true) })
+    return () => { alive = false }
+  }, [id])
 
   const [statusError, setStatusError] = useState('')
 
@@ -42,7 +47,7 @@ export default function OrderDetail() {
 
       <div className="card p-5 mb-4">
         <h2 className="font-semibold mb-2 text-sm">Items</h2>
-        {order.items.map((i) => (
+        {(order.items || []).map((i) => (
           <div key={i.id} className="flex justify-between text-sm py-1">
             <span>{i.name} × {i.qty}</span>
             <span>₹{(Number(i.price) || 0) * (Number(i.qty) || 0)}</span>
@@ -59,6 +64,7 @@ export default function OrderDetail() {
         <div className="flex flex-wrap gap-2">
           {statuses.map((s) => (
             <button
+              type="button"
               key={s}
               onClick={() => handleStatus(s)}
               className={`text-xs font-medium rounded-full px-3 py-1.5 capitalize border ${order.status === s ? 'bg-brand-600 text-white border-brand-600' : 'border-slate-300 text-slate-600'}`}

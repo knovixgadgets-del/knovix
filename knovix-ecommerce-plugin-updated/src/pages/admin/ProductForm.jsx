@@ -25,7 +25,7 @@ export default function ProductForm() {
 
     if (isEdit) {
       getProduct(id)
-        .then((p) => { setForm(p); setLoading(false) })
+        .then((p) => { setForm({ ...empty, ...p, stock: p.stock ?? '' }); setLoading(false) })
         .catch(() => { setError('Could not load this product.'); setLoading(false) })
     }
 

@@ -16,7 +16,7 @@ export const homeShow = {
   featured: true,       // Featured Products
   deals: true,          // Flash sale + Mega Deals
   bestSellers: true,    // Best Sellers
-  newsletter: true      // email subscribe strip
+  newsletter: false     // email subscribe strip — OFF: the form had no backend and discarded emails while promising ₹100 off. Turn on once a subscribe endpoint exists.
 }
 
 // 2) TOP TAB BAR

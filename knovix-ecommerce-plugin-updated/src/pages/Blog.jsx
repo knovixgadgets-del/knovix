@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import usePageMeta from '../utils/usePageMeta'
 
 // Dummy thumbnail — falls back to the gradient block if the placeholder
 // service is unreachable, so a post card never shows a broken-image icon.
@@ -85,6 +85,7 @@ const posts = [
 ]
 
 export default function Blog() {
+  usePageMeta('Blog')
   const [featured, ...rest] = posts
 
   return (
@@ -97,36 +98,36 @@ export default function Blog() {
       </div>
 
       {/* Featured post */}
-      <Link to="#" className="card overflow-hidden mt-8 grid sm:grid-cols-2 group">
+      <article className="card overflow-hidden mt-8 grid sm:grid-cols-2 group">
         <PostThumb src={featured.image} gradient={featured.gradient} className="h-48 sm:h-full w-full" />
         <div className="p-5 sm:p-6 flex flex-col justify-center">
           <span className="inline-block w-fit bg-brand-50 text-brand-700 text-[11px] font-semibold px-2.5 py-1 rounded-full">
             {featured.category}
           </span>
-          <h2 className="mt-3 text-lg sm:text-xl font-bold text-ink-900 group-hover:text-brand-700 transition-colors">
+          <h2 className="mt-3 text-lg sm:text-xl font-bold text-ink-900">
             {featured.title}
           </h2>
           <p className="mt-2 text-sm text-slate-500">{featured.excerpt}</p>
           <p className="mt-3 text-xs text-slate-400">{featured.date} · {featured.readMins} min read</p>
         </div>
-      </Link>
+      </article>
 
       {/* Post grid */}
       <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {rest.map((post) => (
-          <Link key={post.id} to="#" className="card overflow-hidden group">
+          <article key={post.id} className="card overflow-hidden group">
             <PostThumb src={post.image} gradient={post.gradient} className="h-36 w-full" />
             <div className="p-4">
               <span className="inline-block bg-brand-50 text-brand-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">
                 {post.category}
               </span>
-              <h3 className="mt-2.5 font-semibold text-sm text-ink-900 leading-snug group-hover:text-brand-700 transition-colors">
+              <h3 className="mt-2.5 font-semibold text-sm text-ink-900 leading-snug">
                 {post.title}
               </h3>
               <p className="mt-1.5 text-xs text-slate-500 line-clamp-2">{post.excerpt}</p>
               <p className="mt-2.5 text-[11px] text-slate-400">{post.date} · {post.readMins} min read</p>
             </div>
-          </Link>
+          </article>
         ))}
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getOrders } from '../api/orders'
 import { BoxIcon, ChevronRightIcon } from '../components/Icons'
+import usePageMeta from '../utils/usePageMeta'
 
 const inr = (n) => Number(n || 0).toLocaleString('en-IN')
 
@@ -45,24 +46,40 @@ function ItemThumbs({ items = [] }) {
 }
 
 export default function Account() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
+  usePageMeta('My Account', undefined, { noindex: true })
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
+    setError(false)
     getOrders({ userId: user.id })
       .then((items) => { if (!cancelled) setOrders(Array.isArray(items) ? items : []) })
-      .catch(() => { if (!cancelled) setOrders([]) })
+      .catch(() => { if (!cancelled) { setOrders([]); setError(true) } }) // don't pretend there are no orders
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [user.id])
+  }, [user.id, retryKey])
+
+  const formatDate = (d) => {
+    const date = new Date(d)
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
 
   return (
     <div className="container-px max-w-3xl mx-auto py-8">
-      <h1 className="text-xl font-bold">My Account</h1>
-      <p className="text-sm text-slate-500 mt-1">{user.name} · {user.email}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold">My Account</h1>
+          <p className="text-sm text-slate-500 mt-1 truncate">
+            {[user.name, user.email || user.phone].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+        <button type="button" onClick={logout} className="btn-outline h-9 px-4 text-xs shrink-0">Sign out</button>
+      </div>
 
       <h2 className="text-lg font-semibold mt-8 mb-3">Order History</h2>
 
@@ -71,6 +88,11 @@ export default function Account() {
           {[0, 1].map((i) => (
             <div key={i} className="card p-4 h-24 bg-slate-100 animate-pulse" />
           ))}
+        </div>
+      ) : error ? (
+        <div className="card p-6 text-center">
+          <p className="text-slate-600 text-sm">We couldn't load your orders right now.</p>
+          <button type="button" onClick={() => setRetryKey((k) => k + 1)} className="btn-primary mt-4 inline-flex">Retry</button>
         </div>
       ) : orders.length === 0 ? (
         <div className="card p-6 text-center">
@@ -84,7 +106,7 @@ export default function Account() {
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium font-mono truncate">{o.id}</p>
-                  <p className="text-xs text-slate-500">{new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p className="text-xs text-slate-500">{formatDate(o.createdAt)}</p>
                 </div>
                 <span className={`text-xs font-semibold rounded-full px-2.5 py-1 capitalize shrink-0 ${statusColor[o.status] || 'bg-slate-100 text-slate-600'}`}>
                   {o.status}
@@ -93,9 +115,9 @@ export default function Account() {
 
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <ItemThumbs items={o.items} />
+                  <ItemThumbs items={o.items || []} />
                   <p className="text-sm text-slate-600 truncate">
-                    {o.items.length} item{o.items.length === 1 ? '' : 's'} · <span className="font-semibold text-ink-900">₹{inr(o.total)}</span>
+                    {(o.items || []).length} item{(o.items || []).length === 1 ? '' : 's'} · <span className="font-semibold text-ink-900">₹{inr(o.total)}</span>
                   </p>
                 </div>
 

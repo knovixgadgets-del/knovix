@@ -9,14 +9,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     let alive = true
-    Promise.all([getProducts(), getOrders()])
+    Promise.all([getProducts({}, { includeHidden: true }), getOrders()])
       .then(([products, orders]) => {
         if (!alive) return
         setStats({
           products: products.length,
           orders: orders.length,
-          revenue: orders.reduce((s, o) => s + (Number(o.total) || 0), 0),
-          lowStock: products.filter((p) => p.stock <= 10).length
+          // cancelled / refunded orders are not revenue
+          revenue: orders
+            .filter((o) => !['cancelled', 'refunded', 'failed'].includes(String(o.status).toLowerCase()))
+            .reduce((s, o) => s + (Number(o.total) || 0), 0),
+          // stock = null means "not tracked", which is not low stock
+          lowStock: products.filter((p) => p.stock !== null && p.stock !== undefined && p.stock !== '' && Number(p.stock) <= 10).length
         })
       })
       .catch((err) => { if (alive) setError(err.message || "Couldn't load dashboard data.") })
@@ -26,7 +30,7 @@ export default function Dashboard() {
   const cards = [
     ['📦', 'Total Products', stats.products],
     ['🧾', 'Total Orders', stats.orders],
-    ['💰', 'Revenue', `₹${stats.revenue}`],
+    ['💰', 'Revenue', `₹${stats.revenue.toLocaleString('en-IN')}`],
     ['⚠️', 'Low Stock Items', stats.lowStock]
   ]
 

@@ -66,18 +66,11 @@ export default function App() {
             SEO value across two near-identical URLs. */}
         <Route path="/about-knovix" element={<Navigate to="/about" replace />} />
 
-        {['about', 'careers', 'brands', 'faq', 'returns', 'shipping', 'privacy', 'terms'].map((slug) => (
-          <Route
-            key={slug}
-            path={`/${slug}`}
-            element={
-              <StaticPage
-                slug={slug}
-                title={slug.replace(/^\w/, (c) => c.toUpperCase())}
-              />
-            }
-          />
+        {['about', 'careers', 'faq', 'returns', 'shipping', 'privacy', 'terms'].map((slug) => (
+          <Route key={slug} path={`/${slug}`} element={<StaticPage slug={slug} />} />
         ))}
+        {/* No separate brands page yet — send visitors to the catalogue. */}
+        <Route path="/brands" element={<Navigate to="/shop" replace />} />
 
         <Route path="*" element={<NotFound />} />
       </Route>

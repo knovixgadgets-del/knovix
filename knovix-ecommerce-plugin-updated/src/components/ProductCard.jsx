@@ -1,41 +1,21 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useWishlist } from '../context/WishlistContext'
 import { useCart } from '../context/CartContext'
 import StarRating from './StarRating'
-import { getDisplayRating } from '../utils/rating'
+import { getDisplayRating, hasRating } from '../utils/rating'
+import { inr, stockInfo, discountPercent } from '../utils/format'
 
-const inr = (n) => Number(n || 0).toLocaleString('en-IN')
-
-// Scalloped "68% OFF" badge (Knovix peacock-teal starburst with rounded points),
-// drawn as one SVG path so it stays crisp at any density.
-function scallopPath(cx, cy, r, bumps = 10, depth = 0.09, steps = 120) {
-  const pts = []
-  for (let i = 0; i <= steps; i++) {
-    const t = (i / steps) * Math.PI * 2
-    const rr = r * (1 - depth + depth * Math.cos(bumps * t))
-    pts.push(`${(cx + rr * Math.cos(t)).toFixed(2)},${(cy + rr * Math.sin(t)).toFixed(2)}`)
-  }
-  return `M${pts.join('L')}Z`
-}
-const BADGE_PATH = scallopPath(24, 24, 24)
-
+// "68% OFF" badge. Flat brand colour (the old gradient used a hard-coded SVG id,
+// which was duplicated once per card on the page).
 function DiscountBadge({ percent }) {
   return (
-    <div className="absolute -top-2 -left-2 z-10 w-12 h-12 select-none pointer-events-none">
-      <svg viewBox="0 0 48 48" className="absolute inset-0 w-full h-full drop-shadow-sm" aria-hidden="true">
-        <defs>
-          <linearGradient id="off-badge-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#328ca4" />
-            <stop offset="1" stopColor="#1b596a" />
-          </linearGradient>
-        </defs>
-        <path d={BADGE_PATH} fill="url(#off-badge-grad)" />
-      </svg>
-      <span className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold leading-[1.05] text-[10px]">
-        <span>{percent}%</span>
-        <span>OFF</span>
-      </span>
+    <div
+      className="absolute -top-2 -left-2 z-10 w-12 h-12 rounded-full bg-brand-600 text-white shadow-sm ring-2 ring-white flex flex-col items-center justify-center font-bold leading-[1.05] text-[10px] select-none pointer-events-none"
+      aria-label={`${percent} percent off`}
+    >
+      <span>{percent}%</span>
+      <span>OFF</span>
     </div>
   )
 }
@@ -46,14 +26,11 @@ export default function ProductCard({ product }) {
   const inCart = items.some((i) => i.id === product.id)
   const [imgErrored, setImgErrored] = useState(false)
 
-  const mrp = Number(product.mrp) || 0
   const price = Number(product.price) || 0
-  const percent = useMemo(
-    () => (mrp > price && mrp > 0 ? Math.round(((mrp - price) / mrp) * 100) : 0),
-    [mrp, price]
-  )
+  const mrp = Number(product.mrp) || 0
+  const percent = discountPercent(mrp, price)
   const saved = mrp > price ? mrp - price : 0
-  const outOfStock = product.stock === 0
+  const stock = stockInfo(product)
   const wished = isWishlisted(product.id)
 
   return (
@@ -70,7 +47,7 @@ export default function ProductCard({ product }) {
               src={product.image}
               alt={product.name}
               className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 ${
-                outOfStock ? 'opacity-50' : ''
+                stock.out ? 'opacity-50' : ''
               }`}
               loading="lazy"
               onError={() => setImgErrored(true)}
@@ -84,33 +61,31 @@ export default function ProductCard({ product }) {
           {product.name}
         </h3>
 
-        <div className="mt-1">
-          <StarRating rating={getDisplayRating(product)} reviews={product.reviews} />
-        </div>
+        {hasRating(product) && (
+          <div className="mt-1">
+            <StarRating rating={getDisplayRating(product)} reviews={Number(product.reviews) > 0 ? product.reviews : undefined} />
+          </div>
+        )}
 
         <div className="mt-1.5 flex items-baseline gap-2 flex-wrap">
           <span className="text-xl font-bold text-ink-900">₹{inr(price)}</span>
-          {saved > 0 && (
-            <span className="text-sm text-slate-400 line-through">₹{inr(mrp)}</span>
-          )}
+          {saved > 0 && <span className="text-sm text-slate-400 line-through">₹{inr(mrp)}</span>}
         </div>
 
         {saved > 0 && (
           <p className="mt-1 text-[15px] font-medium text-emerald-600">You save ₹{inr(saved)}</p>
         )}
 
-        {outOfStock ? (
+        {stock.out ? (
           <p className="text-xs text-red-500 font-medium mt-1">Out of stock</p>
         ) : (
-          product.stock > 0 && product.stock <= 10 && (
-            <p className="text-xs text-red-500 font-medium mt-1">Only {product.stock} left</p>
-          )
+          stock.low && <p className="text-xs text-red-500 font-medium mt-1">Only {stock.qty} left</p>
         )}
       </Link>
 
-      {!outOfStock && (
+      {!stock.out && (
         inCart ? (
-          <Link to="/checkout" className="add-to-cart-btn absolute left-3 right-3 bottom-3 text-center">
+          <Link to="/cart" className="add-to-cart-btn absolute left-3 right-3 bottom-3 flex items-center justify-center">
             Go to Cart
           </Link>
         ) : (
@@ -127,7 +102,8 @@ export default function ProductCard({ product }) {
       <button
         type="button"
         onClick={() => toggle(product.id)}
-        aria-label="Toggle wishlist"
+        aria-label={wished ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+        aria-pressed={wished}
         className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
       >
         <span className={wished ? 'text-red-500' : 'text-slate-400'}>{wished ? '♥' : '♡'}</span>

@@ -42,6 +42,8 @@ export default function BottomNav({ menuOpen, setMenuOpen }) {
       </NavLink>
 
       <button
+        type="button"
+        aria-expanded={menuOpen}
         onClick={() => setMenuOpen((v) => !v)}
         className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 text-[11px] ${
           menuOpen ? 'text-brand-700' : 'text-slate-500'

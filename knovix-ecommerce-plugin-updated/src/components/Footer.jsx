@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 import { FacebookIcon, InstagramIcon, WhatsappIcon } from './Icons'
 
 const cols = [
-  { title: 'Company', links: [['About Us', '/about'], ['Careers', '/careers'], ['Blog', '/blog'], ['Media Kit', '/about'], ['Contact Us', '/contact']] },
+  { title: 'Company', links: [['About Us', '/about'], ['Careers', '/careers'], ['Blog', '/blog'], ['Contact Us', '/contact']] },
   { title: 'Customer Service', links: [['FAQs', '/faq'], ['Order Tracking', '/account'], ['Returns & Refunds', '/returns'], ['Shipping Policy', '/shipping']] },
-  { title: 'Legal', links: [['Privacy Policy', '/privacy'], ['Terms & Conditions', '/terms'], ['Refund Policy', '/returns']] }
+  { title: 'Legal', links: [['Privacy Policy', '/privacy'], ['Terms & Conditions', '/terms']] }
 ]
 
 const socials = [

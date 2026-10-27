@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import usePageMeta from '../utils/usePageMeta'
 
 function useResendTimer() {
   const [secondsLeft, setSecondsLeft] = useState(0)
@@ -18,9 +19,10 @@ function useResendTimer() {
 // signup. A collapsible email/password form underneath still exists,
 // mainly so the admin/demo account can get into /admin.
 export default function Login() {
-  const { requestOtp, verifyOtp, updateProfile, login } = useAuth()
+  const { user: currentUser, loading: authLoading, requestOtp, verifyOtp, updateProfile, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  usePageMeta('Sign in', undefined, { noindex: true })
 
   const [step, setStep] = useState('phone') // 'phone' | 'otp'
   const [phone, setPhone] = useState('')
@@ -33,6 +35,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [secondsLeft, setSecondsLeft] = useResendTimer()
   const otpInputRef = useRef(null)
+  // Set as soon as the visitor submits a sign-in form, so the "already signed in"
+  // redirect below can't fire half-way through the new-customer name step.
+  const signingIn = useRef(false)
 
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [pwEmail, setPwEmail] = useState('')
@@ -47,8 +52,8 @@ export default function Login() {
     e.preventDefault()
     setError('')
     const digits = phone.replace(/\D/g, '')
-    if (digits.length !== 10) {
-      setError('Enter a valid 10-digit mobile number.')
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      setError('Enter a valid 10-digit Indian mobile number (starting with 6, 7, 8 or 9).')
       return
     }
     setLoading(true)
@@ -88,6 +93,7 @@ export default function Login() {
       return
     }
     setLoading(true)
+    signingIn.current = true
     try {
       const user = await verifyOtp(phone.replace(/\D/g, ''), otp, name)
       if (user.isNewUser && !name) {
@@ -99,6 +105,7 @@ export default function Login() {
       }
       goToDestination(user)
     } catch (err) {
+      signingIn.current = false
       setError(err.message)
       setLoading(false)
     }
@@ -108,6 +115,7 @@ export default function Login() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    signingIn.current = true
     try {
       const user = await login(pwEmail, pwPassword)
       goToDestination(user)
@@ -118,28 +126,37 @@ export default function Login() {
     }
   }
 
+  // Someone who is already signed in has no reason to see the login form
+  // (except mid-way through the one-time "what should we call you?" step).
+  if (currentUser && !authLoading && !signingIn.current && !askName) {
+    const dest = location.state?.from?.pathname || (currentUser.role === 'admin' ? '/admin' : '/')
+    return <Navigate to={dest} replace />
+  }
+
   return (
     <div className="container-px max-w-sm mx-auto py-16">
       <h1 className="text-xl font-bold text-center">Welcome to Knovix</h1>
       {location.state?.from?.pathname === '/checkout' && (
-        <p className="text-sm text-center text-brand-700 bg-brand-50 rounded-md px-3 py-2">Please log in to complete your checkout. Your cart is saved.</p>
+        <p className="mt-4 text-sm text-center text-brand-700 bg-brand-50 rounded-md px-3 py-2">Please log in to complete your checkout. Your cart is saved.</p>
       )}
       <p className="text-sm text-slate-500 text-center mt-1">
         {step === 'phone' ? 'Login or sign up with your mobile number' : `Enter the code sent to +91 ${phone}`}
       </p>
 
-      {error && <p className="text-red-600 text-sm bg-red-50 rounded-md px-3 py-2 mt-4">{error}</p>}
+      {error && <p role="alert" className="text-red-600 text-sm bg-red-50 rounded-md px-3 py-2 mt-4">{error}</p>}
 
       {step === 'phone' && (
         <form onSubmit={handleSendOtp} className="mt-6 space-y-4">
           <div>
-            <label className="label">Mobile Number</label>
+            <label htmlFor="login-phone" className="label">Mobile Number</label>
             <div className="flex items-stretch h-11 rounded-md border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-brand-400 focus-within:border-brand-400">
               <span className="flex items-center px-3 bg-slate-50 text-sm text-slate-600 border-r border-slate-300">+91</span>
               <input
+                id="login-phone"
                 required
                 type="tel"
                 inputMode="numeric"
+                autoComplete="tel-national"
                 maxLength={10}
                 placeholder="98765 43210"
                 className="flex-1 min-w-0 px-3 text-sm focus:outline-none"
@@ -157,12 +174,14 @@ export default function Login() {
       {step === 'otp' && !askName && (
         <form onSubmit={handleVerify} className="mt-6 space-y-4">
           <div>
-            <label className="label">{otpLength}-Digit OTP</label>
+            <label htmlFor="login-otp" className="label">{otpLength}-Digit OTP</label>
             <input
+              id="login-otp"
               ref={otpInputRef}
               required
               type="text"
               inputMode="numeric"
+              autoComplete="one-time-code"
               maxLength={otpLength}
               placeholder={'•'.repeat(otpLength)}
               className="input tracking-[0.4em] text-center text-lg"
@@ -209,8 +228,8 @@ export default function Login() {
         >
           <p className="text-sm text-slate-500 text-center">You're verified! What should we call you?</p>
           <div>
-            <label className="label">Full Name</label>
-            <input required autoFocus className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            <label htmlFor="login-name" className="label">Full Name</label>
+            <input id="login-name" required autoFocus autoComplete="name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <button disabled={loading} className="btn-primary w-full">
             {loading ? 'Finishing up…' : 'Continue'}
@@ -223,14 +242,15 @@ export default function Login() {
         <button
           type="button"
           onClick={() => setShowPasswordForm((v) => !v)}
+          aria-expanded={showPasswordForm}
           className="text-sm w-full text-center"
         >
           {showPasswordForm ? (
             <span className="text-ink-900 font-medium hover:text-brand-700">Hide</span>
           ) : (
             <span className="text-ink-900">
-              Already have an account?{' '}
-              <span className="text-brand-700 font-semibold hover:text-brand-800">Login</span>
+              Have an email &amp; password account?{' '}
+              <span className="text-brand-700 font-semibold hover:text-brand-800">Sign in with email</span>
             </span>
           )}
         </button>
@@ -238,12 +258,12 @@ export default function Login() {
         {showPasswordForm && (
           <form onSubmit={handlePasswordLogin} className="mt-4 space-y-3">
             <div>
-              <label className="label">Email</label>
-              <input required type="email" className="input" value={pwEmail} onChange={(e) => setPwEmail(e.target.value)} />
+              <label htmlFor="login-email" className="label">Email</label>
+              <input id="login-email" required type="email" autoComplete="email" className="input" value={pwEmail} onChange={(e) => setPwEmail(e.target.value)} />
             </div>
             <div>
-              <label className="label">Password</label>
-              <input required type="password" className="input" value={pwPassword} onChange={(e) => setPwPassword(e.target.value)} />
+              <label htmlFor="login-password" className="label">Password</label>
+              <input id="login-password" required type="password" autoComplete="current-password" className="input" value={pwPassword} onChange={(e) => setPwPassword(e.target.value)} />
             </div>
             <button disabled={loading} className="btn-outline w-full">
               {loading ? 'Logging in…' : 'Login'}
