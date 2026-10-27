@@ -170,9 +170,18 @@
 
 
 /* ─── banner box + pill progress dots ─── */
-.hb-frame { height: var(--hb-height); }
-@media (min-width: 640px)  { .hb-frame { height: var(--hb-height-md); } }
-@media (min-width: 1024px) { .hb-frame { height: var(--hb-height-lg); } }
+/* Responsive banner: the frame keeps the picture's own 2:1 shape, so on phones,
+   tablets and desktops the whole artwork (including the text baked into it) stays
+   visible instead of being cropped by a fixed pixel height. object-fit: cover still
+   fills the frame; on very wide screens the height is capped and only the top/bottom
+   edge is trimmed. */
+.hb-frame { aspect-ratio: 2 / 1; width: 100%; }
+@media (min-width: 1280px) { .hb-frame { aspect-ratio: auto; height: min(560px, 44vw); } }
+
+/* Smaller button on small screens so it doesn't cover the artwork */
+.hb-frame .hb-cta { font-size: 0.8rem; padding: 0.4rem 0.9rem; }
+@media (min-width: 640px)  { .hb-frame .hb-cta { font-size: 0.95rem; padding: 0.55rem 1.3rem; } }
+@media (min-width: 1024px) { .hb-frame .hb-cta { font-size: 1.05rem; padding: 0.7rem 1.7rem; } }
 
 .hb-dots { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
 .hb-dash {

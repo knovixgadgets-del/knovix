@@ -73,7 +73,7 @@ function CategoryTile({ category }) {
           <img
             src={category.image}
             alt={category.name}
-            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
             onError={() => setErrored(true)}
           />
