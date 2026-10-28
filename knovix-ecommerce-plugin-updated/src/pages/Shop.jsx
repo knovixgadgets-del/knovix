@@ -176,10 +176,10 @@ export default function Shop() {
   return (
     <div className="bg-brand-50 min-h-[60vh]">
 
-    <div className="container-px max-w-7xl mx-auto py-4 md:py-8 grid md:grid-cols-[220px_1fr] gap-4 md:gap-8">
+    <div className="container-px max-w-7xl mx-auto py-4 md:py-8 grid grid-cols-1 md:grid-cols-[200px_minmax(0,1fr)] lg:grid-cols-[220px_minmax(0,1fr)] gap-4 md:gap-6 lg:gap-8">
 
       {/* Sidebar */}
-      <aside className="space-y-6">
+      <aside className="hidden md:block space-y-6">
 
         {/* Category (desktop — mobile browses via the header's category
             picker and Deals / New Arrivals / Brands links instead) */}
@@ -228,7 +228,7 @@ export default function Shop() {
       </aside>
 
       {/* Products Area */}
-      <div>
+      <div className="min-w-0">
 
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">

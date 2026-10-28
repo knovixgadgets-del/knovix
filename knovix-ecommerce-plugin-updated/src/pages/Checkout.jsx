@@ -103,7 +103,7 @@ export default function Checkout() {
   else if (quote.status === 'ok') buttonLabel = phoneOk ? `Place Order · ₹${inr(total)}` : 'Enter a valid mobile number to continue'
 
   return (
-    <div className="container-px max-w-5xl mx-auto py-8 grid md:grid-cols-[1fr_320px] gap-8">
+    <div className="container-px max-w-5xl mx-auto py-8 grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
       {placed && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 animate-[fade-in_0.2s_ease-out]" role="dialog" aria-modal="true" aria-label="Order placed">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 text-center hero-in">
@@ -205,7 +205,7 @@ export default function Checkout() {
         </p>
       </form>
 
-      <div className="card p-5 h-fit md:sticky md:top-28">
+      <div className="card p-5 h-fit lg:sticky lg:top-28">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold">Order Summary</h2>
           <Link to="/cart" className="text-xs text-brand-700 hover:underline">Edit cart</Link>

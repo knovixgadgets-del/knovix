@@ -46,7 +46,7 @@ export default function ProductCard({ product }) {
             <img
               src={product.image}
               alt={product.name}
-              className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 ${
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
                 stock.out ? 'opacity-50' : ''
               }`}
               loading="lazy"

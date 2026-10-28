@@ -30,7 +30,7 @@ export default function MiniProductRail({ title, products = [] }) {
                 )}
                 <div className="aspect-square rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden">
                   {p.image ? (
-                    <img src={p.image} alt={p.name} loading="lazy" className="w-full h-full object-contain" />
+                    <img src={p.image} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xs text-slate-300">No image</span>
                   )}

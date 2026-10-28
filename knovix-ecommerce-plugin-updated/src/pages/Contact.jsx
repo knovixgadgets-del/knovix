@@ -52,7 +52,7 @@ export default function Contact() {
       </div>
 
       <div className="mt-8 grid lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-2 space-y-3">
+        <div className="lg:col-span-2 grid sm:grid-cols-2 lg:grid-cols-1 gap-3 content-start">
           {details.map(({ icon: Icon, label, lines, href }) => {
             const inner = (
               <>

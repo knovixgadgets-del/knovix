@@ -24,7 +24,7 @@ export default function Cart() {
 
   return (
     <div className="bg-brand-50 min-h-[60vh]">
-      <div className="container-px max-w-6xl mx-auto py-6 sm:py-8 grid lg:grid-cols-[1fr_340px] gap-6 items-start">
+      <div className="container-px max-w-6xl mx-auto py-6 sm:py-8 grid md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_340px] gap-5 lg:gap-6 items-start">
         <section aria-labelledby="cart-heading" className="card p-4 sm:p-6">
           <div className="flex items-baseline justify-between border-b border-slate-100 pb-3">
             <h1 id="cart-heading" className="text-xl font-bold">Shopping Cart</h1>
@@ -102,7 +102,7 @@ export default function Cart() {
           </div>
         </section>
 
-        <aside className="card p-5 lg:sticky lg:top-28" aria-label="Order summary">
+        <aside className="card p-5 md:sticky md:top-28" aria-label="Order summary">
           {freeMin && (
             toFree > 0 ? (
               <p className="text-xs text-brand-800 bg-brand-50 rounded-md px-3 py-2 mb-4">

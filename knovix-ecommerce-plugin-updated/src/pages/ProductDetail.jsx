@@ -329,7 +329,7 @@ export default function ProductDetail() {
           </div>
 
           {/* Delivery & trust — same promises already made on the home page */}
-          <ul className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600">
+          <ul className="mt-5 grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 lg:grid-cols-3 gap-3 text-xs text-slate-600">
             <li className="flex items-start gap-2 rounded-lg bg-slate-50 p-3">
               <TruckIcon className="w-5 h-5 text-brand-700 shrink-0" />
               <span>
